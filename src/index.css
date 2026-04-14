@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-surface: #0e0e0e;
+    --color-surface-container: #191a1a;
+    --color-surface-container-low: #131313;
+    --color-surface-container-high: #1f2020;
+    --color-surface-container-highest: #252626;
+    --color-surface-bright: #2c2c2c;
+    --color-primary: #c6c6c7;
+    --color-primary-container: #454747;
+    --color-on-surface: #e7e5e4;
+    --color-on-surface-variant: #acabaa;
+    --color-outline-variant: #484848;
+    --color-error: #ee7d77;
+    --color-on-error: #490106;
+    --color-background: #0e0e0e;
+    --color-on-background: #e7e5e4;
+  }
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+.glass-effect {
+  backdrop-filter: blur(12px);
+  background: rgba(37, 38, 38, 0.6);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
