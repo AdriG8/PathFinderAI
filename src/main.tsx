@@ -8,6 +8,8 @@ import ForgotPassword from './pages/ForgotPassword'
 import MainPage from './pages/MainPage'
 import ExamplePage from './pages/Example'
 import ExampleViewer from './pages/ExampleViewer'
+import RoadmapEditorPage from './pages/RoadmapEditorPage'
+import RoadmapViewerPage from './pages/RoadmapViewerPage'
 import { ScrollToTop, PageTransition } from './components/ScrollToTop'
 
 createRoot(document.getElementById('root')!).render(
@@ -21,6 +23,8 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
         <Route path="/example" element={<PageTransition><ExamplePage /></PageTransition>} />
         <Route path="/example-viewer" element={<PageTransition><ExampleViewer /></PageTransition>} />
+        <Route path="/roadmap-editor" element={<PageTransition><RoadmapEditorPage /></PageTransition>} />
+        <Route path="/roadmap-viewer" element={<PageTransition><RoadmapViewerPage /></PageTransition>} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

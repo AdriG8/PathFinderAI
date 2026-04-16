@@ -1,9 +1,49 @@
 import { Link } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+
+interface ImportedMap {
+  name: string
+  id: string
+}
 
 export default function MainPage() {
   const [isLoggedIn] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [importedMaps, setImportedMaps] = useState<ImportedMap[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleImportJSON = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const json = JSON.parse(e.target?.result as string)
+        const mapId = `map_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        
+        sessionStorage.setItem(mapId, JSON.stringify(json))
+        
+        const newMap: ImportedMap = {
+          name: file.name.replace('.json', ''),
+          id: mapId,
+        }
+        setImportedMaps((prev) => [...prev, newMap])
+      } catch (error) {
+        console.error('Error parsing JSON:', error)
+        alert('Error al parsear el archivo JSON')
+      }
+    }
+    reader.readAsText(file)
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const openImportedMap = (map: ImportedMap) => {
+    window.open(`/roadmap-editor?id=${map.id}`, '_blank')
+  }
 
   return (
     <div className="relative h-screen" style={{ backgroundColor: 'var(--color-surface)' }}>
@@ -42,6 +82,35 @@ export default function MainPage() {
             <span className="material-symbols-outlined text-xl">map</span>
             {sidebarOpen && <span className="text-sm font-medium">Example</span>}
           </Link>
+
+          {importedMaps.map((map, index) => (
+            <button 
+              key={index}
+              onClick={() => openImportedMap(map)}
+              className="rounded-full px-4 py-2 flex items-center gap-3 group active:scale-[0.98] transition-all duration-200"
+              style={{ backgroundColor: 'var(--color-surface-container-high)', color: '#f5f5f5' }}
+            >
+              <span className="material-symbols-outlined text-xl">folder_open</span>
+              {sidebarOpen && <span className="text-sm font-medium">{map.name}</span>}
+            </button>
+          ))}
+
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            className="rounded-full px-4 py-2 flex items-center gap-3 group active:scale-[0.98] transition-all duration-200"
+            style={{ backgroundColor: 'var(--color-surface-container-high)', color: '#f5f5f5' }}
+          >
+            <span className="material-symbols-outlined text-xl">upload_file</span>
+            {sidebarOpen && <span className="text-sm font-medium">Importar JSON</span>}
+          </button>
+          
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            onChange={handleImportJSON}
+            className="hidden"
+          />
         </nav>
       </aside>
 
