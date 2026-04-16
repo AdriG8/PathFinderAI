@@ -6,6 +6,8 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
 import MainPage from './pages/MainPage'
+import ExamplePage from './pages/Example'
+import ExampleViewer from './pages/ExampleViewer'
 import { ScrollToTop, PageTransition } from './components/ScrollToTop'
 
 createRoot(document.getElementById('root')!).render(
@@ -17,6 +19,8 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
         <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
         <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
+        <Route path="/example" element={<PageTransition><ExamplePage /></PageTransition>} />
+        <Route path="/example-viewer" element={<PageTransition><ExampleViewer /></PageTransition>} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

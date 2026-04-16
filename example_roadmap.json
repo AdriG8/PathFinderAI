@@ -1,0 +1,83 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "position": {
+        "x": 125,
+        "y": 0
+      },
+      "data": {
+        "label": "Fundamentos de React",
+        "status": "aprendido",
+        "resources": {
+          "enlaces": [
+            {
+              "nombre": "Documentación oficial",
+              "url": "https://react.dev"
+            },
+            {
+              "nombre": "Tutorial interactivo",
+              "url": "https://react.dev/learn"
+            },
+            {
+              "nombre": "Ejemplo",
+              "url": "https://reactflow.dev/learn/customization/handles"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "2",
+      "position": {
+        "x": 0,
+        "y": 170
+      },
+      "data": {
+        "label": "Hooks Básicos (useState)",
+        "status": "estudiando",
+        "resources": {
+          "enlaces": [
+            {
+              "nombre": "Referencia de useState",
+              "url": "https://react.dev/reference/react/useState"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "3",
+      "position": {
+        "x": 250,
+        "y": 170
+      },
+      "data": {
+        "label": "Gestión de Efectos (useEffect)",
+        "status": "aprendido",
+        "resources": {
+          "enlaces": [
+            {
+              "nombre": "Guía de Ciclo de Vida",
+              "url": "https://react.dev/reference/react/useEffect"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1-2",
+      "source": "1",
+      "target": "2",
+      "animated": true
+    },
+    {
+      "id": "e1-3",
+      "source": "1",
+      "target": "3",
+      "animated": false
+    }
+  ]
+}

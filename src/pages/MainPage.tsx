@@ -33,6 +33,15 @@ export default function MainPage() {
             <span className="material-symbols-outlined text-xl">add</span>
             {sidebarOpen && <span className="text-sm font-medium">Nuevo chat</span>}
           </button>
+
+          <Link 
+            to="/example" 
+            className="rounded-full px-4 py-2 flex items-center gap-3 group active:scale-[0.98] transition-all duration-200"
+            style={{ backgroundColor: 'var(--color-surface-container-high)', color: '#f5f5f5' }}
+          >
+            <span className="material-symbols-outlined text-xl">map</span>
+            {sidebarOpen && <span className="text-sm font-medium">Example</span>}
+          </Link>
         </nav>
       </aside>
 
