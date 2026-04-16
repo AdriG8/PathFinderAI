@@ -659,8 +659,23 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId }: 
                 Recursos
               </h3>
               
-              {!readOnly && (
-                <div className="flex flex-col gap-2 mb-3">
+              <ul className="space-y-2">
+                {clickedNode.data.resources.enlaces.map((enlace, index) => (
+                  <li key={index}>
+                    <a
+                      href={enlace.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm hover:underline"
+                      style={{ color: 'var(--color-primary)' }}
+                    >
+                      {enlace.nombre}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+                {!readOnly && (
+                <div className="flex flex-col gap-2 mt-10">
                   <input
                     className="px-2 py-1 rounded text-sm outline-none"
                     style={{ 
@@ -692,22 +707,6 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId }: 
                   </button>
                 </div>
               )}
-
-              <ul className="space-y-2">
-                {clickedNode.data.resources.enlaces.map((enlace, index) => (
-                  <li key={index}>
-                    <a
-                      href={enlace.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm hover:underline"
-                      style={{ color: 'var(--color-primary)' }}
-                    >
-                      {enlace.nombre}
-                    </a>
-                  </li>
-                ))}
-              </ul>
             </div>
           )}
 
