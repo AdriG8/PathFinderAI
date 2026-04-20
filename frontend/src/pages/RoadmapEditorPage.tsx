@@ -1,42 +1,117 @@
-// Importa hooks de React para memorizar datos
-import { useMemo } from 'react'
-// Importa hook de React Router para acceder a parámetros de URL
+import { useMemo, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-// Importa el componente editor de roadmap
 import RoadmapEditor from '../components/RoadmapEditor'
+import { API_URL } from '../context/AuthContext'
 
-// Página del editor de roadmap que permite crear y editar roadmaps personalizados
 export default function RoadmapEditorPage() {
-  // Obtiene los parámetros de búsqueda de la URL (ej: ?id=123)
   const [searchParams] = useSearchParams()
-  // Extrae el parámetro 'id' que identifica el roadmap en sessionStorage
   const mapId = searchParams.get('id')
+  const [loading, setLoading] = useState(true)
+  const [roadmapData, setRoadmapData] = useState<any>(null)
 
-  // Memoriza los datos del roadmap:
-  // Si no existe ID, retorna estructura vacía; si existe, busca en sessionStorage
-  const roadmapData = useMemo(() => {
-    // Si no hay ID, retorna roadmap vacío
-    if (!mapId) {
-      return {
-        nodes: [],
-        edges: []
+  useEffect(() => {
+    const fetchRoadmap = async () => {
+      if (!mapId) {
+        setLoading(false)
+        return
+      }
+
+      const token = localStorage.getItem('token')
+      try {
+        const response = await fetch(`${API_URL}/api/roadmap/${mapId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          console.log('Roadmap JSON:', data)
+          setRoadmapData({ 
+            JSON: data.JSON, 
+            title: data.Titulo_Tema 
+          })
+          
+          sessionStorage.setItem(mapId, JSON.stringify(data.JSON))
+        } else {
+          const existing = sessionStorage.getItem(mapId)
+          if (existing) {
+            setRoadmapData({ JSON: JSON.parse(existing), title: 'Roadmap' })
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching roadmap:', error)
+        const existing = sessionStorage.getItem(mapId)
+        if (existing) {
+          setRoadmapData({ JSON: JSON.parse(existing), title: 'Roadmap' })
+        }
+      } finally {
+        setLoading(false)
       }
     }
-    // Intenta obtener los datos del roadmap desde sessionStorage
+
+    fetchRoadmap()
+  }, [mapId])
+
+  const data = useMemo(() => {
+    if (!mapId) {
+      return { nodes: [], edges: [] }
+    }
+
+    if (roadmapData?.JSON) {
+      return roadmapData.JSON
+    }
+
     try {
       const data = sessionStorage.getItem(mapId)
       if (data) {
-        // Parsea los datos JSON del roadmap
+        console.log('Roadmap JSON from sessionStorage:', JSON.parse(data))
         return JSON.parse(data)
       }
       return { nodes: [], edges: [] }
     } catch {
-      // Si hay error al parsear, retorna roadmap vacío
       return { nodes: [], edges: [] }
     }
-  }, [mapId])
+  }, [mapId, roadmapData])
 
-  // Renderiza el editor de roadmap en modo editable
-  // Pasa el ID del mapa para permitir guardar cambios en sessionStorage
-  return <RoadmapEditor initialData={roadmapData} readOnly={false} mapId={mapId || undefined} />
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-surface)' }}>
+        <div className="animate-pulse text-xl" style={{ color: 'var(--color-on-surface)' }}>Cargando roadmap...</div>
+      </div>
+    )
+  }
+
+  const handleSave = async (data: any) => {
+    const token = localStorage.getItem('token')
+    const title = roadmapData?.title || 'Roadmap sin título'
+    console.log('Saving roadmap:', mapId, title)
+    
+    try {
+      const response = await fetch(`${API_URL}/api/save`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: mapId,
+          title: title,
+          json: data
+        })
+      })
+
+      if (response.ok) {
+        alert('Roadmap guardado correctamente')
+      } else {
+        const error = await response.json()
+        alert('Error al guardar: ' + error.error)
+      }
+    } catch (error) {
+      console.error('Error saving roadmap:', error)
+      alert('Error al guardar el roadmap')
+    }
+  }
+
+  return <RoadmapEditor initialData={data} readOnly={false} mapId={mapId || undefined} onSave={handleSave} />
 }

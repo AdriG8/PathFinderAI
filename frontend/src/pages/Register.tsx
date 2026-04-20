@@ -1,9 +1,58 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
+const API_URL = 'http://localhost:3000'
+
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+    const confirmPassword = formData.get('confirm-password') as string
+    const firstName = formData.get('firstName') as string
+    const lastName = formData.get('lastName') as string
+
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden')
+      setLoading(false)
+      return
+    }
+
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres')
+      setLoading(false)
+      return
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, firstName, lastName }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Error al registrar')
+      } else {
+        window.location.href = '/'
+      }
+    } catch (err) {
+      setError('Error de conexión')
+    }
+
+    setLoading(false)
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center selection:bg-primary selection:text-surface overflow-x-hidden" style={{ backgroundColor: 'var(--color-surface)' }}>
@@ -28,17 +77,32 @@ export default function Register() {
             <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>Crea tu cuenta de tutor personal.</p>
           </div>
 
-          <form className="space-y-8">
-            <div className="space-y-3">
-              <label className="block text-xs ml-1 uppercase tracking-wider" style={{ color: 'var(--color-on-surface-variant)' }} htmlFor="name">Nombre completo</label>
-              <input 
-                className="w-full border-none rounded-xl px-4 py-3.5 transition-all outline-none"
-                style={{ backgroundColor: 'var(--color-surface-container-highest)', color: 'var(--color-on-surface)' }}
-                id="name" 
-                name="name" 
-                placeholder="John Doe" 
-                type="text"
-              />
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="block text-xs ml-1 uppercase tracking-wider" style={{ color: 'var(--color-on-surface-variant)' }} htmlFor="firstName">Nombre</label>
+                <input 
+                  className="w-full border-none rounded-xl px-4 py-3.5 transition-all outline-none"
+                  style={{ backgroundColor: 'var(--color-surface-container-highest)', color: 'var(--color-on-surface)' }}
+                  id="firstName" 
+                  name="firstName" 
+                  placeholder="Nombre" 
+                  type="text"
+                  required
+                />
+              </div>
+              <div className="space-y-3">
+                <label className="block text-xs ml-1 uppercase tracking-wider" style={{ color: 'var(--color-on-surface-variant)' }} htmlFor="lastName">Apellidos</label>
+                <input 
+                  className="w-full border-none rounded-xl px-4 py-3.5 transition-all outline-none"
+                  style={{ backgroundColor: 'var(--color-surface-container-highest)', color: 'var(--color-on-surface)' }}
+                  id="lastName" 
+                  name="lastName" 
+                  placeholder="Apellidos" 
+                  type="text"
+                  required
+                />
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -50,6 +114,7 @@ export default function Register() {
                 name="email" 
                 placeholder="email@ejemplo.com" 
                 type="email"
+                required
               />
             </div>
 
@@ -63,6 +128,8 @@ export default function Register() {
                   name="password" 
                   placeholder="••••••••" 
                   type={showPassword ? "text" : "password"}
+                  required
+                  minLength={6}
                 />
                 <button 
                   className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors"
@@ -78,15 +145,16 @@ export default function Register() {
             </div>
 
             <div className="space-y-3">
-              <label className="block text-xs ml-1 uppercase tracking-wider" style={{ color: 'var(--color-on-surface-variant)' }} htmlFor="repeat-password">Repetir contraseña</label>
+              <label className="block text-xs ml-1 uppercase tracking-wider" style={{ color: 'var(--color-on-surface-variant)' }} htmlFor="confirm-password">Repetir contraseña</label>
               <div className="relative">
                 <input 
                   className="w-full border-none rounded-xl px-4 py-3.5 transition-all outline-none pr-12"
                   style={{ backgroundColor: 'var(--color-surface-container-highest)', color: 'var(--color-on-surface)' }}
-                  id="repeat-password" 
-                  name="repeat-password" 
+                  id="confirm-password" 
+                  name="confirm-password" 
                   placeholder="••••••••" 
                   type={showConfirmPassword ? "text" : "password"}
+                  required
                 />
                 <button 
                   className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors"
@@ -101,27 +169,20 @@ export default function Register() {
               </div>
             </div>
 
-            <div className="flex items-center space-x-3 px-1">
-              <div className="flex items-center h-5">
-                <input 
-                  className="w-4 h-4 rounded cursor-pointer" 
-                  style={{ backgroundColor: 'var(--color-surface-container-highest)', accentColor: 'var(--color-primary)' }}
-                  id="terms" 
-                  type="checkbox"
-                />
+            {error && (
+              <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+                {error}
               </div>
-              <label className="text-[0.75rem] cursor-pointer" style={{ color: 'var(--color-on-surface-variant)' }} htmlFor="terms">
-                Acepto los términos y condiciones
-              </label>
-            </div>
+            )}
 
             <div className="pt-2 flex justify-center">
               <button 
-                className="w-full font-bold py-4 rounded-full hover:opacity-90 active:scale-[0.98] transition-all flex justify-center items-center gap-2 group max-w-xs"
+                className="w-full font-bold py-4 rounded-full hover:opacity-90 active:scale-[0.98] transition-all flex justify-center items-center gap-2 group max-w-xs disabled:opacity-50"
                 style={{ backgroundColor: 'var(--color-surface-bright)', color: 'var(--color-on-surface)' }}
                 type="submit"
+                disabled={loading}
               >
-                Registrarse
+                {loading ? 'Registrando...' : 'Registrarse'}
                 <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
               </button>
             </div>

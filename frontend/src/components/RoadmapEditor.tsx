@@ -88,6 +88,7 @@ interface RoadmapEditorProps {
   initialData: RoadmapData    // Datos iniciales del roadmap
   readOnly?: boolean       // Modo solo lectura
   mapId?: string         // ID del mapa para guardar en sessionStorage
+  onSave?: (data: RoadmapData) => void  // Callback para guardar en BD
 }
 
 // =============================================
@@ -181,7 +182,7 @@ const nodeTypes: NodeTypes = {
 // =============================================
 
 // Componente principal para editar roadmaps
-export default function RoadmapEditor({ initialData, readOnly = false, mapId }: RoadmapEditorProps) {
+export default function RoadmapEditor({ initialData, readOnly = false, mapId, onSave }: RoadmapEditorProps) {
   // =============================================
   // ESTADOS DEL COMPONENTE
   // =============================================
@@ -259,6 +260,13 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId }: 
     setShowPanel(true)
   }, [readOnly])
 
+  // Callback cuando se arrastra un nodo
+  const onNodeDragStop = useCallback((_event: React.MouseEvent, node: Node<CustomNodeData>) => {
+    if (clickedNode && clickedNode.id === node.id) {
+      setClickedNode(node)
+    }
+  }, [clickedNode])
+
   // Función para cerrar el panel lateral
   const closePanel = useCallback(() => {
     setShowPanel(false)
@@ -266,7 +274,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId }: 
   }, [])
 
   // Función para añadir un recurso/enlace al nodo
-  const addResource = useCallback(() => {
+  const addResource = () => {
     // Validar que hay datos necesarios
     if (!newResourceUrl.trim() || !newResourceTitle.trim() || !clickedNode) return
 
@@ -309,7 +317,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId }: 
     // Limpiar inputs
     setNewResourceUrl('')
     setNewResourceTitle('')
-  }, [newResourceUrl, newResourceTitle, clickedNode, setNodes])
+  }
 
   // Función para cambiar el estado de un nodo
   const changeStatus = useCallback((newStatus: string) => {
@@ -407,7 +415,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId }: 
         x: 250 + Math.random() * 200, 
         y: 100 + Math.random() * 200 
       },
-      data: { label: newNodeName, status: 'pendiente', isEditing: false },
+      data: { label: newNodeName, status: 'pendiente', isEditing: false, resources: { enlaces: [] } },
     }
     
     // Añadir nodo a la lista
@@ -631,6 +639,27 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId }: 
               >
                 Exportar
               </button>
+              {/* Botón para guardar en BD */}
+              {mapId && (
+                <button
+                  onClick={() => {
+                    const data = { 
+                      nodes: nodes.map(n => ({ id: n.id, type: n.type, position: n.position, data: n.data })), 
+                      edges: edges.map(e => ({ id: e.id, source: e.source, target: e.target, animated: e.animated })) 
+                    }
+                    if (onSave) {
+                      onSave(data as any)
+                    } else {
+                      sessionStorage.setItem(mapId, JSON.stringify(data))
+                      alert('Guardado en sessionStorage')
+                    }
+                  }}
+                  className="px-4 py-2 rounded-full font-bold text-sm transition-all hover:opacity-90 active:scale-[0.98]"
+                  style={{ backgroundColor: '#3b82f6', color: 'white' }}
+                >
+                  Guardar
+                </button>
+              )}
               {/* Botón para auto-layout */}
               <button
                 onClick={() => autoLayout()}
@@ -707,6 +736,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId }: 
         onConnect={onConnect}
         onSelectionChange={onSelectionChange}
         onNodeClick={onNodeClick}
+        onNodeDragStop={onNodeDragStop}
         nodeTypes={nodeTypes}
         fitView
         style={{ backgroundColor: 'var(--color-surface)' }}
@@ -798,10 +828,9 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId }: 
             )}
           </div>
 
-          {/* Sección de Recursos (solo si hay recursos) */}
-          {(clickedNode.data.resources?.enlaces && clickedNode.data.resources.enlaces.length > 0) && (
-            <div className="mb-4">
-              <h3 
+          {/* Sección de Recursos */}
+          <div className="mb-4">
+            <h3 
                 className="text-sm font-semibold mb-2"
                 style={{ color: 'var(--color-on-surface)' }}
               >
@@ -810,7 +839,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId }: 
               
               {/* Lista de recursos/enlaces */}
               <ul className="space-y-2">
-                {clickedNode.data.resources.enlaces.map((enlace, index) => (
+                {(clickedNode.data.resources?.enlaces || []).map((enlace, index) => (
                   <li key={index}>
                     <a
                       href={enlace.url}
@@ -824,10 +853,10 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId }: 
                   </li>
                 ))}
               </ul>
-              
+
               {/* Formulario para añadir recurso (solo si no es solo lectura) */}
               {!readOnly && (
-                <div className="flex flex-col gap-2 mt-10">
+                <div className="flex flex-col gap-2 mt-4">
                   <input
                     className="px-2 py-1 rounded text-sm outline-none"
                     style={{ 
@@ -860,9 +889,8 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId }: 
                 </div>
               )}
             </div>
-          )}
 
-          {/* Sección de Notas (solo si no es solo lectura) */}
+            {/* Sección de Notas (solo si no es solo lectura) */}
           {!readOnly && (
             <div>
               <h3 

@@ -1,8 +1,44 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
+const API_URL = 'http://localhost:3000'
+
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    try {
+      const response = await fetch(`${API_URL}/api/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Error al iniciar sesión')
+      } else {
+        localStorage.setItem('token', data.session.access_token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        window.location.href = '/'
+      }
+    } catch (err) {
+      setError('Error de conexión')
+    }
+
+    setLoading(false)
+  }
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-on-surface)' }}>
@@ -26,7 +62,7 @@ export default function Login() {
               <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>Ingresa a tu tutor personal.</p>
             </div>
 
-            <form className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-8">
               <div className="space-y-3">
                 <label className="block text-xs ml-1 uppercase tracking-wider" style={{ color: 'var(--color-on-surface-variant)' }} htmlFor="email">Email</label>
                 <input 
@@ -36,6 +72,7 @@ export default function Login() {
                   name="email" 
                   placeholder="nombre@ejemplo.com" 
                   type="email"
+                  required
                 />
               </div>
               
@@ -52,6 +89,7 @@ export default function Login() {
                     name="password" 
                     placeholder="••••••••" 
                     type={showPassword ? "text" : "password"}
+                    required
                   />
                   <button 
                     className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors"
@@ -66,12 +104,19 @@ export default function Login() {
                 </div>
               </div>
 
+              {error && (
+                <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+                  {error}
+                </div>
+              )}
+
               <button 
-                className="w-full rounded-full hover:opacity-90 active:scale-[0.98] transition-all flex justify-center items-center gap-2 group mt-2 font-bold py-4"
+                className="w-full rounded-full hover:opacity-90 active:scale-[0.98] transition-all flex justify-center items-center gap-2 group mt-2 font-bold py-4 disabled:opacity-50"
                 style={{ backgroundColor: 'var(--color-surface-bright)', color: 'var(--color-on-surface)' }}
                 type="submit"
+                disabled={loading}
               >
-                Iniciar sesión
+                {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
                 <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
               </button>
             </form>
