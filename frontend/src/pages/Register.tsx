@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-const API_URL = 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false)
@@ -45,7 +45,7 @@ export default function Register() {
       if (!response.ok) {
         setError(data.error || 'Error al registrar')
       } else {
-        window.location.href = '/'
+        window.location.href = '/confirm-email'
       }
     } catch (err) {
       setError('Error de conexión')

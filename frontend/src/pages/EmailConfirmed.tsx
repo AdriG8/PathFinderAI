@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { API_URL } from '../context/AuthContext'
 
 export default function EmailConfirmed() {
   const [searchParams] = useSearchParams()
@@ -9,27 +8,16 @@ export default function EmailConfirmed() {
 
   useEffect(() => {
     const confirmEmail = async () => {
-      const token = searchParams.get('token')
-      const type = searchParams.get('type')
+      const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const token = hashParams.get('access_token') || searchParams.get('token')
+      const type = hashParams.get('type') || searchParams.get('type')
 
-      if (token && type === 'email_change') {
-        try {
-          const response = await fetch(`${API_URL}/api/verify-email`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token })
-          })
-
-          if (response.ok) {
-            setStatus('success')
-          } else {
-            setStatus('error')
-          }
-        } catch {
-          setStatus('error')
-        }
-      } else {
+      if (token && type === 'signup' || type === 'email_change') {
         setStatus('success')
+      } else if (!token && !type) {
+        setStatus('success')
+      } else {
+        setStatus('error')
       }
     }
 
