@@ -14,4 +14,7 @@ export default defineConfig({
       '@@': path.resolve(__dirname, './@'),
     },
   },
+  optimizeDeps: {
+    include: ['html2canvas'],
+  },
 })

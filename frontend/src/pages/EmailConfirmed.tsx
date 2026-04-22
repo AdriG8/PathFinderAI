@@ -1,40 +1,65 @@
+// Importa hooks de React (useEffect para efectos, useState para estados)
 import { useEffect, useState } from 'react'
+// Importa componentes de navegación (Link, useNavigate, useSearchParams)
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
+// =============================================
+// PÁGINA DE EMAIL CONFIRMADO
+// =============================================
+
+// Componente que maneja la confirmación exitosa del email
 export default function EmailConfirmed() {
+  // Obtiene parámetros de la URL
   const [searchParams] = useSearchParams()
+  // Hook de navegación
   const navigate = useNavigate()
+  // Estado para el status de la verificación (loading, success, error)
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
 
+  // Efecto para verificar el token de confirmación
   useEffect(() => {
+    // Función asíncrona para confirmar el email
     const confirmEmail = async () => {
+      // Extrae parámetros del hash en la URL
       const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      // Obtiene el token de acceso
       const token = hashParams.get('access_token') || searchParams.get('token')
+      // Obtiene el tipo de confirmación
       const type = hashParams.get('type') || searchParams.get('type')
 
+      // Si hay token y es de tipo signup o email_change, es exitoso
       if (token && type === 'signup' || type === 'email_change') {
         setStatus('success')
       } else if (!token && !type) {
+        // Si no hay token pero tampoco hay tipo, también es exitoso
         setStatus('success')
       } else {
+        // En otro caso, es error
         setStatus('error')
       }
     }
 
+    // Ejecuta la confirmación
     confirmEmail()
   }, [searchParams])
 
+  // Función para navegar al login
   const handleLogin = () => {
     navigate('/login')
   }
 
+  // Renderiza según el estado
   return (
+    // Contenedor principal
     <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-on-surface)' }}>
+      {/* Efecto de fondo */}
       <div className="absolute inset-0 pointer-events-none flex justify-center items-center overflow-hidden">
         <div className="w-[60vw] h-[60vw] max-w-[800px] max-h-[800px] rounded-full blur-[100px] opacity-60 mix-blend-screen" style={{ backgroundColor: 'var(--color-surface-container-high)/30' }}></div>
       </div>
 
+      {/* Área principal */}
       <main className="flex-1 flex flex-col items-center justify-center w-full max-w-lg mx-auto px-6 py-12 relative z-10">
+        {/* Logo */}
         <div className="mb-12 flex flex-col items-center justify-center">
           <img 
             alt="PathFinderAI Logo" 
@@ -44,6 +69,7 @@ export default function EmailConfirmed() {
           <h2 className="text-2xl font-bold text-center mt-4 tracking-tight">PathFinderAI</h2>
         </div>
 
+        {/* Estado: cargando */}
         {status === 'loading' ? (
           <div className="flex flex-col items-center space-y-8">
             <div className="w-24 h-24 rounded-full flex items-center justify-center animate-pulse" style={{ backgroundColor: 'var(--color-surface-container-high)' }}>
@@ -52,6 +78,7 @@ export default function EmailConfirmed() {
             <p style={{ color: 'var(--color-on-surface-variant)' }}>Verificando...</p>
           </div>
         ) : status === 'error' ? (
+          // Estado: error
           <div className="flex flex-col items-center space-y-8">
             <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-error-container)' }}>
               <span className="material-symbols-outlined text-[44px]" style={{ color: 'var(--color-error)' }}>error</span>
@@ -68,12 +95,15 @@ export default function EmailConfirmed() {
             </Link>
           </div>
         ) : (
+          // Estado: éxito
           <div className="flex flex-col items-center space-y-8">
+            {/* Icono de check */}
             <div className="relative flex items-center justify-center w-28 h-28 rounded-full bg-surface-container-highest/40 backdrop-blur-md border" style={{ borderColor: 'var(--color-outline-variant)/10' }}>
               <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/10 to-transparent blur-md"></div>
               <span className="material-symbols-outlined text-[4rem] relative z-10" style={{ color: 'var(--color-primary)', fontVariationSettings: "'FILL' 0, 'wght' 200" }}>check_circle</span>
             </div>
 
+            {/* Mensaje de éxito */}
             <div className="text-center space-y-4">
               <h1 className="text-headline-md font-medium">¡Email confirmado!</h1>
               <p className="text-body-md leading-relaxed max-w-sm mx-auto" style={{ color: 'var(--color-on-surface-variant)' }}>
@@ -81,6 +111,7 @@ export default function EmailConfirmed() {
               </p>
             </div>
 
+            {/* Botón para iniciar sesión */}
             <div className="pt-4 flex w-full justify-center">
               <button 
                 onClick={handleLogin}
@@ -93,6 +124,7 @@ export default function EmailConfirmed() {
         )}
       </main>
 
+      {/* Pie de página */}
       <footer className="text-[0.75rem] px-6 py-12 max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 relative z-10" style={{ color: 'var(--color-on-surface-variant)' }}>
         <div className="order-2 md:order-1">
           © 2026 PathFinderAI

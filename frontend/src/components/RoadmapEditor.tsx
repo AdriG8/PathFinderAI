@@ -1,24 +1,23 @@
 // Importa hooks de React para manejar estado, efectos y callbacks
 import { useState, useCallback, useMemo, useEffect } from 'react'
-// Importa componentes y funciones de ReactFlow para crear el editor de diagrama
 import ReactFlow, {
-  Background,          // Fondo de cuadrícula
-  Controls,            // Botones de zoom y paneo
-  MiniMap,             // Vista minimap del diagrama
-  type Node,           // Tipo para nodos
-  type Edge,           // Tipo para aristas
-  type OnConnect,      // Tipo para conexión de nodos
-  type NodeTypes,     // Tipos de nodos personalizados
-  Handle,             // Puntos de conexión (input/output)
-  Position,           // Posiciones de los handles
-  addEdge,            // Función para añadir aristas
-  useNodesState,       // Hook para gestionar nodos
-  useEdgesState,      // Hook para gestionar aristas
+  Background,
+  Controls,
+  MiniMap,
+  type Node,
+  type Edge,
+  type OnConnect,
+  type NodeTypes,
+  Handle,
+  Position,
+  addEdge,
+  useNodesState,
+  useEdgesState,
+  type ReactFlowInstance,
 } from 'reactflow'
-// Importa librería Dagre para auto-layout de nodos
 import dagre from 'dagre'
-// Importa estilos de ReactFlow
 import 'reactflow/dist/style.css'
+import html2canvas from 'html2canvas'
 
 // =============================================
 // CONSTANTES - Colores y configuraciones
@@ -206,6 +205,8 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
   const [newResourceTitle, setNewResourceTitle] = useState('')
   // Estado para la dirección del layout (vertical/horizontal)
   const [layoutDirection] = useState<'horizontal' | 'vertical'>('vertical')
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
 
   // =============================================
   // MEMOS - Datos memoizados
@@ -239,6 +240,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
   // Hook para gestionar nodos (persiste en sessionStorage cuando hay mapId)
   const [nodes, setNodes, onNodesChange] = useNodesState<CustomNodeData>(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+  const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null)
 
   // =============================================
   // CALLBACKS - Manejadores de eventos
@@ -485,37 +487,68 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
   }, [selectedNodeIds, setNodes])
 
   // Función para exportar el mapa a JSON
-  const exportMap = useCallback(() => {
-    const mapData = {
-      nodes: nodes.map((node) => ({
-        id: node.id,
-        type: node.type === 'custom' ? undefined : node.type,
-        position: node.position,
-        data: {
-          label: node.data.label,
-          status: node.data.status,
-          color: node.data.color,
-          resources: node.data.resources,
-        },
-      })),
-      edges: edges.map((edge) => ({
-        id: edge.id,
-        source: edge.source,
-        target: edge.target,
-        animated: edge.animated,
-        label: (edge as any).label,
-      })),
-    }
+  const exportMap = useCallback((type: 'json' | 'image') => {
+    if (type === 'json') {
+      const mapData = {
+        nodes: nodes.map((node) => ({
+          id: node.id,
+          type: node.type === 'custom' ? undefined : node.type,
+          position: node.position,
+          data: {
+            label: node.data.label,
+            status: node.data.status,
+            color: node.data.color,
+            resources: node.data.resources,
+          },
+        })),
+        edges: edges.map((edge) => ({
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          animated: edge.animated,
+          label: (edge as any).label,
+        })),
+      }
 
-    // Crear blob y descargar
-    const blob = new Blob([JSON.stringify(mapData, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'roadmap.json'
-    a.click()
-    URL.revokeObjectURL(url)
-  }, [nodes, edges])
+      const blob = new Blob([JSON.stringify(mapData, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'roadmap.json'
+      a.click()
+      URL.revokeObjectURL(url)
+    } else {
+      setIsExporting(true)
+      setTimeout(async () => {
+        try {
+          if (flowInstance) {
+            flowInstance.fitView({ padding: 0.2, duration: 300 })
+          }
+          await new Promise(resolve => setTimeout(resolve, 350))
+          
+          const flowElement = document.querySelector('.react-flow') as HTMLElement
+          if (flowElement) {
+            const canvas = await html2canvas(flowElement, {
+              backgroundColor: '#1a1a2e',
+              scale: 2,
+              useCORS: true,
+              allowTaint: true,
+            })
+            const dataUrl = canvas.toDataURL('image/png')
+            
+            const link = document.createElement('a')
+            link.download = 'roadmap.png'
+            link.href = dataUrl
+            link.click()
+          }
+        } catch (err) {
+          console.error('Error exporting image:', err)
+        }
+        setIsExporting(false)
+      }, 100)
+    }
+    setShowExportModal(false)
+  }, [nodes, edges, flowInstance])
 
   // =============================================
   // EFECTOS - Efectos secundarios
@@ -631,9 +664,9 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
               >
                 + Añadir nodo
               </button>
-              {/* Botón para exportar JSON */}
+              {/* Botón para exportar */}
               <button
-                onClick={exportMap}
+                onClick={() => setShowExportModal(true)}
                 className="px-4 py-2 rounded-full font-bold text-sm transition-all hover:opacity-90 active:scale-[0.98]"
                 style={{ backgroundColor: 'var(--color-secondary-container)', color: 'var(--color-on-surface)' }}
               >
@@ -737,6 +770,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
         onSelectionChange={onSelectionChange}
         onNodeClick={onNodeClick}
         onNodeDragStop={onNodeDragStop}
+        onInit={setFlowInstance}
         nodeTypes={nodeTypes}
         fitView
         style={{ backgroundColor: 'var(--color-surface)' }}
@@ -770,6 +804,49 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
           }}
         />
       </ReactFlow>
+
+      {/* Modal de exportación */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div 
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowExportModal(false)}
+          />
+          <div 
+            className="relative z-10 p-6 rounded-2xl shadow-xl max-w-sm w-full mx-4"
+            style={{ backgroundColor: 'var(--color-surface-container-low)' }}
+          >
+            <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--color-on-surface)' }}>
+              Exportar como
+            </h3>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => exportMap('json')}
+                disabled={isExporting}
+                className="w-full px-4 py-3 rounded-xl font-bold text-sm transition-all hover:opacity-90"
+                style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
+              >
+                📄 JSON
+              </button>
+              <button
+                onClick={() => exportMap('image')}
+                disabled={isExporting}
+                className="w-full px-4 py-3 rounded-xl font-bold text-sm transition-all hover:opacity-90"
+                style={{ backgroundColor: 'var(--color-secondary)', color: 'white' }}
+              >
+                {isExporting ? 'Exportando...' : '🖼️ Imagen'}
+              </button>
+            </div>
+            <button
+              onClick={() => setShowExportModal(false)}
+              className="mt-4 w-full px-4 py-2 rounded-xl font-bold text-sm transition-all hover:opacity-90"
+              style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Panel lateral de detalle del nodo */}
       {clickedNode && showPanel && (

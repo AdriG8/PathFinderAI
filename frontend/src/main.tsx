@@ -12,6 +12,7 @@ import RoadmapEditorPage from './pages/RoadmapEditorPage'
 import RoadmapViewerPage from './pages/RoadmapViewerPage'
 import { ScrollToTop, PageTransition } from './components/ScrollToTop'
 import { AuthProvider } from './context/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -25,8 +26,8 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
           <Route path="/confirm-email" element={<PageTransition><ConfirmEmail /></PageTransition>} />
           <Route path="/email-confirmed" element={<PageTransition><EmailConfirmed /></PageTransition>} />
-          <Route path="/roadmap-editor" element={<PageTransition><RoadmapEditorPage /></PageTransition>} />
-          <Route path="/roadmap-viewer" element={<PageTransition><RoadmapViewerPage /></PageTransition>} />
+          <Route path="/roadmap-editor" element={<PageTransition><ProtectedRoute><RoadmapEditorPage /></ProtectedRoute></PageTransition>} />
+          <Route path="/roadmap-viewer" element={<PageTransition><ProtectedRoute><RoadmapViewerPage /></ProtectedRoute></PageTransition>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

@@ -1,255 +1,79 @@
+// Importa Express para crear el servidor web
 const express = require('express');
+// Importa CORS para permitir peticiones cruzadas
 const cors = require('cors');
-const { createClient } = require('@supabase/supabase-js');
+// Carga las variables de entorno desde .env
 require('dotenv').config();
 
+// =============================================
+// IMPORTACIONES DE CONTROLADORES
+// =============================================
+
+// Controlador de usuario (login, register, logout, authenticate)
+const userController = require('./controllers/userController');
+// Controlador de roadmap (save, get, getById)
+const roadmapController = require('./controllers/roadmapController');
+// Controlador de generación (AI)
+const generateController = require('./controllers/generateController');
+
+// =============================================
+// CONFIGURACIÓN DEL SERVIDOR
+// =============================================
+
+// Crea la aplicación Express
 const app = express();
+// Puerto donde escuchará el servidor
 const PORT = 3000;
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// middlewares globales
+app.use(cors());  // Habilita CORS
+app.use(express.json());  // Parsea JSON en las peticiones
 
-const supabase = createClient(supabaseUrl, supabaseKey);
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: { autoRefreshToken: false, persistSession: false }
-});
-
-app.use(cors());
-app.use(express.json());
-
+// Middleware para loguear todas las peticiones
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   next();
 });
 
-const authenticateToken = async (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+// =============================================
+// RUTAS DE USUARIO
+// =============================================
 
-  if (!token) {
-    return res.status(401).json({ error: 'Token no proporcionado' });
-  }
+// POST /api/register - Registrar nuevo usuario
+app.post('/api/register', userController.register);
 
-  const { data: { user }, error } = await supabase.auth.getUser(token);
+// POST /api/login - Iniciar sesión
+app.post('/api/login', userController.login);
 
-  if (error || !user) {
-    return res.status(401).json({ error: 'Token inválido o expirado' });
-  }
+// POST /api/logout - Cerrar sesión (protegida)
+app.post('/api/logout', userController.authenticateToken, userController.logout);
 
-  req.user = user;
-  next();
-};
+// =============================================
+// RUTAS DE GENERACIÓN
+// =============================================
 
-app.post('/api/register', async (req, res) => {
-  try {
-    const { email, password, firstName, lastName } = req.body;
+// POST /api/generate - Generar roadmap con IA (protegida)
+app.post('/api/generate', userController.authenticateToken, generateController.generateRoadmap);
 
-    if (!email || !password || !firstName || !lastName) {
-      return res.status(400).json({ error: 'Faltan datos requeridos' });
-    }
+// =============================================
+// RUTAS DE ROADMAP
+// =============================================
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          full_name: `${firstName} ${lastName}`
-        },
-        emailRedirectTo: 'http://localhost:5173/email-confirmed'
-      }
-    });
+// POST /api/save - Guardar roadmap (protegida)
+app.post('/api/save', userController.authenticateToken, roadmapController.saveRoadmap);
 
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
+// GET /api/roadmaps - Obtener todos los roadmaps (protegida)
+app.get('/api/roadmaps', userController.authenticateToken, roadmapController.getRoadmaps);
 
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// GET /api/roadmap/test - Endpoint de prueba (público)
+app.get('/api/roadmap/test', roadmapController.testRoadmap);
 
-app.post('/api/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
+// GET /api/roadmap/:id - Obtener roadmap por ID (protegida)
+app.get('/api/roadmap/:id', userController.authenticateToken, roadmapController.getRoadmapById);
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/logout', authenticateToken, async (req, res) => {
-  try {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    res.json({ message: 'Sesión cerrada correctamente' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/generate', authenticateToken, async (req, res) => {
-  try {
-    const { prompt } = req.body;
-    
-    const geminiApiKey = process.env.GEMINI_API_KEY;
-    
-    if (!geminiApiKey) {
-      return res.status(500).json({ error: 'GEMINI_API_KEY no configurada' });
-    }
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `Genera una ruta de aprendizaje en formato JSON con esta estructura exacta para la libreria React Flow,:
-          {
-            "title": "nombre de la ruta",
-            "nodes": [
-              {"id": "1", "label": "tema principal", "type": "input"},
-              {"id": "2", "label": "subtema", "type": "default"}
-            ],
-            "edges": [
-              {"id": "e1-2", "source": "1", "target": "2"}
-            ]
-          }
-          TEMA: ${prompt}, RESPONDE SOLO CON EL JSON NO PONGAS MENSAJES DE NINGUN TIPO.`,
-          }]
-        }]
-      })
-    });
-
-    const data = await response.json();
-    
-    if (data.error) {
-      return res.status(400).json({ error: data.error.message });
-    }
-
-    const generatedText = data.candidates[0].content.parts[0].text;
-    const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
-    
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      res.json(parsed);
-    } else {
-      res.status(400).json({ error: 'No se pudo parsear la respuesta' });
-    }
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/save', authenticateToken, async (req, res) => {
-  try {
-    const { id, title, json } = req.body;
-    const userId = req.user.id;
-
-    if (id) {
-      const { data, error } = await supabaseAdmin
-        .from('Roadmap')
-        .update({ 
-          "Titulo_Tema": title,
-          "JSON": json
-        })
-        .eq('ID', id)
-        .eq('ID_Usuario', userId);
-
-      if (error) {
-        return res.status(400).json({ error: error.message });
-      }
-
-      return res.json(data);
-    } else {
-      const { data, error } = await supabaseAdmin
-        .from('Roadmap')
-        .insert([{
-          "ID_Usuario": userId,
-          "Titulo_Tema": title,
-          "JSON": json
-        }]);
-
-      if (error) {
-        return res.status(400).json({ error: error.message });
-      }
-
-      return res.json(data);
-    }
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/roadmaps', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    const { data, error } = await supabaseAdmin
-      .from('Roadmap')
-      .select('*')
-      .eq('ID_Usuario', userId)
-      .order('Fecha_Creacion', { ascending: false });
-
-    if (error) {
-      console.log('Error fetching roadmaps:', error);
-      return res.status(400).json({ error: error.message });
-    }
-
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/roadmap/test', (req, res) => {
-  res.json({ message: 'Test endpoint works', tables: ['Roadmap'] });
-});
-
-app.get('/api/roadmap/:id', authenticateToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id;
-
-    console.log('Fetching roadmap:', id, 'for user:', userId);
-
-    const { data, error } = await supabaseAdmin
-      .from('Roadmap')
-      .select('*')
-      .eq('ID', id)
-      .eq('ID_Usuario', userId)
-      .single();
-
-    if (error) {
-      console.log('Supabase error:', error);
-      return res.status(404).json({ error: 'Roadmap no encontrado' });
-    }
-
-    res.json(data);
-  } catch (err) {
-    console.log('Catch error:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
+// =============================================
+// INICIO DEL SERVIDOR
+// =============================================
 
 app.listen(PORT, () => {
   console.log(`API escuchando en http://localhost:${PORT}`);
