@@ -45,36 +45,142 @@
 
 ## 🚀 Instalación y Configuración
 
-Sigue estos pasos para levantar el proyecto en tu entorno local:
+### Prerequisites
 
-1. **Clonar el repositorio:**
-   ```bash
-   git clone [https://github.com/AdriG8/PathFinderAI.git](https://github.com/AdriG8/PathFinderAI.git)
-   cd PathFinderAI
+* Node.js (v18+)
+* npm o yarn
 
+### 1. Clonar el repositorio
 
-Instalar dependencias:
-Bash
+```bash
+git clone https://github.com/AdriG8/PathFinderAI.git
+cd PathFinderAI
+```
+
+---
+
+## 💻 Despliegue para Desarrollo
+
+El proyecto se compone de dos partes:
+- **Frontend** (puerto 5173): Interfaz de usuario con React + Vite
+- **API** (puerto 3000): Servidor Express con endpoints para IA y datos
+
+### Paso 1: Configurar la API
+
+```bash
+# Navegar a la carpeta de la API
+cd api
+
+# Instalar dependencias
 npm install
 
+# Copiar el archivo de ejemplo de variables de entorno
+cp .env.example .env
+```
 
-Ejecutar en desarrollo:
-Bash
+Edita el archivo `.env` con tus credenciales:
+
+```env
+# Supabase (obténlas desde tu proyecto en supabase.com)
+VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+VITE_SUPABASE_ANON_KEY=tu-anon-key
+
+# Clave de la API de Gemini (obténla desde Google AI Studio)
+GEMINI_API_KEY=tu-gemini-api-key
+
+# Clave de servicio de Supabase (para operaciones admin)
+SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
+```
+
+**Iniciar la API:**
+```bash
+npm run start
+# La API estará disponible en http://localhost:3000
+```
+
+### Paso 2: Configurar el Frontend
+
+```bash
+# Navegar a la carpeta del frontend
+cd ../frontend
+
+# Instalar dependencias
+npm install
+```
+
+Crea un archivo `.env` en `frontend/` con:
+
+```env
+VITE_API_URL=http://localhost:3000
+VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+VITE_SUPABASE_ANON_KEY=tu-anon-key
+```
+
+**Iniciar el Frontend:**
+```bash
 npm run dev
+# La app estará disponible en http://localhost:5173
+```
 
+### Paso 3: Verificar que funciona
 
-🧠 Estructura de Datos (IA)
+1. La API debe responder en `http://localhost:3000/api/health` (si está configurado)
+2. El frontend debe cargar en `http://localhost:5173`
+3. Los cambios en código se recargan automáticamente
+
+---
+
+## 🏗️ Estructura del Proyecto
+
+```
+PathFinderAI/
+├── api/                    # Servidor Express
+│   ├── controllers/        # Controladores de endpoints
+│   ├── index.js            # Punto de entrada
+│   ├── package.json        # Dependencias API
+│   └── .env                # Variables de entorno
+│
+├── frontend/               # Aplicación React
+│   ├── src/
+│   │   ├── components/     # Componentes React
+│   │   ├── pages/          # Páginas de la app
+│   │   ├── hooks/          # Hooks personalizados
+│   │   ├── context/        # Contextos de React
+│   │   └── utils/          # Utilidades
+│   ├── package.json        # Dependencias Frontend
+│   └── .env                # Variables de entorno
+│
+└── README.md
+```
+
+---
+
+## 🧠 Estructura de Datos (IA)
+
 El sistema procesa los prompts del usuario para devolver un esquema JSON compatible con el motor de visualización:
 
-JSON
-
-
+```json
 {
   "title": "Nombre de la ruta",
-  "nodes": [...],
-  "edges": [...]
+  "nodes": [
+    {
+      "id": "1",
+      "position": { "x": 0, "y": 0 },
+      "data": { "label": "Tema Principal", "status": "pendiente" }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1-2",
+      "source": "1",
+      "target": "2"
+    }
+  ]
 }
+```
 
+---
 
-📄 Licencia
+## 📄 Licencia
+
 Esta obra está bajo una licencia Reconocimiento-Compartir bajo la misma licencia 3.0 España de Creative Commons. Para ver una copia de esta licencia, visite http://creativecommons.org/licenses/by-sa/3.0/es/.

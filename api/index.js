@@ -36,6 +36,36 @@ app.use((req, res, next) => {
 });
 
 // =============================================
+// RUTAS DE SALUD / HEALTH CHECK
+// =============================================
+
+// GET /api/health - Verifica que la API está funcionando
+app.get('/api/health', (req, res) => {
+  // Verificar variables de entorno críticas
+  const requiredEnvVars = ['GEMINI_API_KEY', 'VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY']
+  const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar])
+  
+  const healthStatus = {
+    status: 'ok',
+    message: 'API funcionando correctamente',
+    timestamp: new Date().toISOString(),
+    checks: {
+      server: 'ok',
+      environment: missingEnvVars.length === 0 ? 'ok' : 'warning',
+    }
+  }
+  
+  // Si faltan variables, incluir advertencia
+  if (missingEnvVars.length > 0) {
+    healthStatus.message = 'API funcionando pero faltan variables de entorno'
+    healthStatus.missingEnvVars = missingEnvVars
+  }
+  
+  const statusCode = missingEnvVars.length > 0 ? 200 : 200
+  res.status(statusCode).json(healthStatus)
+});
+
+// =============================================
 // RUTAS DE USUARIO
 // =============================================
 

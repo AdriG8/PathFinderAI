@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react'
 // Importa componentes de navegación (Link, useNavigate, useSearchParams)
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+// Importa iconos de Lucide
+import { Hourglass, XCircle, CheckCircle, ArrowRight } from 'lucide-react'
 
 // =============================================
 // PÁGINA DE EMAIL CONFIRMADO
@@ -73,7 +75,7 @@ export default function EmailConfirmed() {
         {status === 'loading' ? (
           <div className="flex flex-col items-center space-y-8">
             <div className="w-24 h-24 rounded-full flex items-center justify-center animate-pulse" style={{ backgroundColor: 'var(--color-surface-container-high)' }}>
-              <span className="material-symbols-outlined text-[44px]">hourglass_empty</span>
+              <Hourglass className="w-11 h-11 animate-spin" />
             </div>
             <p style={{ color: 'var(--color-on-surface-variant)' }}>Verificando...</p>
           </div>
@@ -81,7 +83,7 @@ export default function EmailConfirmed() {
           // Estado: error
           <div className="flex flex-col items-center space-y-8">
             <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-error-container)' }}>
-              <span className="material-symbols-outlined text-[44px]" style={{ color: 'var(--color-error)' }}>error</span>
+              <XCircle className="w-11 h-11" style={{ color: 'var(--color-error)' }} />
             </div>
             <div className="space-y-4 text-center">
               <h1 className="text-2xl font-medium">Error al confirmar</h1>
@@ -100,7 +102,7 @@ export default function EmailConfirmed() {
             {/* Icono de check */}
             <div className="relative flex items-center justify-center w-28 h-28 rounded-full bg-surface-container-highest/40 backdrop-blur-md border" style={{ borderColor: 'var(--color-outline-variant)/10' }}>
               <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/10 to-transparent blur-md"></div>
-              <span className="material-symbols-outlined text-[4rem] relative z-10" style={{ color: 'var(--color-primary)', fontVariationSettings: "'FILL' 0, 'wght' 200" }}>check_circle</span>
+              <CheckCircle className="w-16 h-16 relative z-10" style={{ color: 'var(--color-primary)' }} />
             </div>
 
             {/* Mensaje de éxito */}
@@ -117,7 +119,7 @@ export default function EmailConfirmed() {
                 onClick={handleLogin}
                 className="font-bold px-10 py-4 rounded-full flex items-center gap-3 transition-transform hover:scale-[1.02] active:scale-95 shadow-lg bg-surface-bright text-on-surface group w-full sm:w-2/3 justify-center mx-auto"
               >
-                Iniciar sesión <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                Iniciar sesión <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
           </div>

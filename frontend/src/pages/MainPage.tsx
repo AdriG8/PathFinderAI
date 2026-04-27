@@ -4,6 +4,10 @@ import { Link } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
 // Importa el contexto de autenticación y la URL de la API
 import { useAuth, API_URL } from '../context/AuthContext'
+// Importa iconos de Lucide
+import { Plus, Map, FolderOpen, Upload, LogOut, Send } from 'lucide-react'
+// Importa utilidades de sanitización
+import { sanitizeFileName } from '../utils/sanitize'
 
 // =============================================
 // INTERFACES - Definiciones de tipos
@@ -218,7 +222,7 @@ export default function MainPage() {
         <div className="flex items-center gap-3 mb-8 px-4">
           {/* Logo */}
           <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
-            <img alt="PathFinder AI Logo" className="w-full h-full object-contain rounded-lg" src="/Picture.png" />
+            <img alt="PathFinder AI Logo" className="w-full h-full object-contain rounded-lg" src="/Logo_2.png" />
           </div>
           {/* Título (solo si sidebar abierta) */}
           {sidebarOpen && (
@@ -236,7 +240,7 @@ export default function MainPage() {
             style={{ backgroundColor: 'var(--color-surface-container-high)', color: '#f5f5f5' }}
             title="Nuevo chat"
           >
-            <span className="material-symbols-outlined text-xl">add</span>
+            <span className="text-xl"><Plus /></span>
             {sidebarOpen && <span className="text-sm font-medium">Nuevo chat</span>}
           </button>
 
@@ -249,7 +253,7 @@ export default function MainPage() {
               style={{ backgroundColor: 'var(--color-surface-container-high)', color: '#f5f5f5' }}
               title={roadmap.Titulo_Tema}
             >
-              <span className="material-symbols-outlined text-xl">route</span>
+              <span className="text-xl"><Map /></span>
               {sidebarOpen && <span className="text-sm font-medium truncate">{roadmap.Titulo_Tema}</span>}
             </button>
           ))}
@@ -261,10 +265,10 @@ export default function MainPage() {
               onClick={() => openImportedMap(map)}
               className={`rounded-full flex items-center gap-3 group active:scale-[0.98] transition-all duration-200 ${sidebarOpen ? 'px-4 py-2 w-full' : 'w-10 h-10 justify-center'}`}
               style={{ backgroundColor: 'var(--color-surface-container-high)', color: '#f5f5f5' }}
-              title={map.name}
+              title={sanitizeFileName(map.name)}
             >
-              <span className="material-symbols-outlined text-xl">folder_open</span>
-              {sidebarOpen && <span className="text-sm font-medium truncate">{map.name}</span>}
+              <span className="text-xl"><FolderOpen /></span>
+              {sidebarOpen && <span className="text-sm font-medium truncate">{sanitizeFileName(map.name)}</span>}
             </button>
           ))}
 
@@ -307,7 +311,7 @@ export default function MainPage() {
                       className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:opacity-80"
                       style={{ color: 'var(--color-on-surface)' }}
                     >
-                      <span className="material-symbols-outlined text-[20px]">upload_file</span>
+                      <Upload className="w-5 h-5" />
                       Importar JSON
                     </button>
                     {/* Opción de cerrar sesión */}
@@ -316,7 +320,7 @@ export default function MainPage() {
                       className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:opacity-80"
                       style={{ color: 'var(--color-on-surface)' }}
                     >
-                      <span className="material-symbols-outlined text-[20px]">logout</span>
+                      <LogOut className="w-5 h-5" />
                       Cerrar sesión
                     </button>
                   </div>
@@ -397,7 +401,7 @@ export default function MainPage() {
               type="text"
             />
             <button className="ml-4 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all" style={{ backgroundColor: 'var(--color-surface-bright)', color: 'var(--color-on-surface)' }}>
-              <span className="material-symbols-outlined text-xl">arrow_upward</span>
+              <Send className="w-5 h-5" />
             </button>
           </div>
         </div>

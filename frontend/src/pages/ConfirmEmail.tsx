@@ -1,5 +1,7 @@
 // Importa el componente Link para navegación
 import { Link } from 'react-router-dom'
+// Importa iconos de Lucide
+import { Mail, ArrowLeft } from 'lucide-react'
 
 // =============================================
 // PÁGINA DE CONFIRMAR EMAIL
@@ -33,7 +35,7 @@ export default function ConfirmEmail() {
             {/* Icono de email no leído */}
             <div className="w-24 h-24 rounded-full flex items-center justify-center shadow-[0_0_60px_rgba(198,198,199,0.03)] relative" style={{ backgroundColor: 'var(--color-surface-container-high)' }}>
               <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-primary/10 to-transparent opacity-50 blur-xl"></div>
-              <span className="material-symbols-outlined text-[44px] relative z-10" style={{ color: 'var(--color-primary)' }}>mark_email_unread</span>
+              <Mail className="w-11 h-11 relative z-10" style={{ color: 'var(--color-primary)' }} />
             </div>
 
             {/* Título y descripción */}
@@ -53,7 +55,7 @@ export default function ConfirmEmail() {
               to="/" 
               className="font-bold px-10 py-4 rounded-full flex items-center gap-3 transition-transform hover:scale-[1.02] active:scale-95 shadow-lg bg-surface-bright text-on-surface group w-2/3 justify-center mx-auto"
             >
-              <span className="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
               Volver a la página principal
             </Link>
           </div>

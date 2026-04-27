@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 // Importa el componente Footer
 import Footer from '../components/Footer'
+// Importa iconos de Lucide
+import { Eye, EyeOff, ArrowRight } from 'lucide-react'
 
 // =============================================
 // CONSTANTES - URL de la API
@@ -104,7 +106,7 @@ export default function Register() {
           <img 
             alt="PathFinderAI Logo" 
             className="h-20 w-auto mb-4" 
-            src="/Picture.png"
+            src="/Logo_2.png"
           />
           <h1 className="font-extrabold text-2xl tracking-tight" style={{ color: 'var(--color-on-surface)' }}>PathFinderAI</h1>
         </div>
@@ -183,9 +185,7 @@ export default function Register() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  <span className="material-symbols-outlined text-[20px]">
-                    {showPassword ? 'visibility_off' : 'visibility'}
-                  </span>
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
@@ -209,9 +209,7 @@ export default function Register() {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
-                  <span className="material-symbols-outlined text-[20px]">
-                    {showConfirmPassword ? 'visibility_off' : 'visibility'}
-                  </span>
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
@@ -232,7 +230,7 @@ export default function Register() {
                 disabled={loading}
               >
                 {loading ? 'Registrando...' : 'Registrarse'}
-                <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
           </form>
