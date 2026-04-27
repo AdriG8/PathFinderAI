@@ -494,7 +494,7 @@ export function useRoadmap(options: UseRoadmapOptions): UseRoadmapReturn {
   const getConnectedNodes = useCallback((nodeId: string) => {
     const connectedIds = new Set<string>()
     
-    //遍历 todas las aristas para encontrar conexiones
+    //todas las aristas para encontrar conexiones
     edges.forEach((edge) => {
       if (edge.source === nodeId) connectedIds.add(edge.target)
       if (edge.target === nodeId) connectedIds.add(edge.source)
@@ -562,7 +562,7 @@ export function useRoadmap(options: UseRoadmapOptions): UseRoadmapReturn {
 
   /**
    * Aplica el layout automático a los nodos actuales
-   * @param direction - Dirección del layout (vertical/horizontal)
+   * @param direction - Dirección del layout (vertical)
    */
   const autoLayout = useCallback((direction: 'horizontal' | 'vertical' = 'vertical') => {
     const { nodes: layoutedNodes } = getLayoutedElements([...nodes], [...edges], direction)
