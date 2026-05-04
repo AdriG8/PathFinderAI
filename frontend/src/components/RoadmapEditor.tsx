@@ -20,7 +20,7 @@ import 'reactflow/dist/style.css'
 // Importa utilidades de sanitización
 import { sanitizeUrl } from '../utils/sanitize'
 // Importa utilidades del hook
-import { getStatusColor, DEFAULT_NODE_COLORS, type RoadmapNodeData } from '../hooks/useRoadmap'
+import { getStatusColor, DEFAULT_NODE_COLORS, type RoadmapNodeData, calculateRoadmapStats } from '../hooks/useRoadmap'
 
 // =============================================
 // INTERFACES
@@ -159,6 +159,9 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
   const [nodes, setNodes, onNodesChange] = useNodesState<RoadmapNodeData>(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set())
+
+  // Calcular estadísticas del roadmap
+  const stats = useMemo(() => calculateRoadmapStats(nodes), [nodes])
 
   // Callback de selección
   const onSelectionChange = useCallback(({ nodes: selectedNodes }: { nodes: Node[] }) => {
@@ -388,34 +391,36 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
       )}
       
       {!readOnly && (
-        <div className="absolute top-4 left-4 z-20 flex gap-2 flex-wrap">
-          <button onClick={openReadOnlyMode} className="px-4 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: 'var(--color-surface-bright)', color: 'var(--color-on-surface)' }}>Modo Lectura</button>
-
+        <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
           {showAddInput ? (
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 p-3 rounded-xl" style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
               <input autoFocus className="px-3 py-2 rounded-full text-sm" style={{ backgroundColor: 'var(--color-surface-container-highest)', color: 'var(--color-on-surface)' }} placeholder="Nombre del nodo..." value={newNodeName} onChange={(e) => setNewNodeName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addNode(); if (e.key === 'Escape') setShowAddInput(false) }} />
-              <button onClick={addNode} className="px-3 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: '#10b981', color: 'white' }}>Añadir</button>
-              <button onClick={() => { setShowAddInput(false); setNewNodeName('') }} className="px-3 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}>Cancelar</button>
+              <div className="flex gap-2">
+                <button onClick={addNode} className="flex-1 px-3 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: '#10b981', color: 'white' }}>Añadir</button>
+                <button onClick={() => { setShowAddInput(false); setNewNodeName('') }} className="flex-1 px-3 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}>Cancelar</button>
+              </div>
             </div>
           ) : (
             <>
-              <button onClick={() => setShowAddInput(true)} className="px-4 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: 'var(--color-primary-container)', color: 'var(--color-on-surface)' }}>+ Añadir nodo</button>
-              <button onClick={() => setShowExportModal(true)} className="px-4 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: 'var(--color-secondary-container)', color: 'var(--color-on-surface)' }}>Exportar</button>
-              {mapId && <button onClick={handleSave} className="px-4 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: '#3b82f6', color: 'white' }}>Guardar</button>}
-              <button onClick={autoLayout} className="px-3 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}>Organizar</button>
+              <button onClick={() => setShowAddInput(true)} className="px-4 py-2 rounded-xl font-bold text-sm" style={{ backgroundColor: '#10b981', color: 'white' }}>+ Añadir</button>
+              <button onClick={() => setShowExportModal(true)} className="px-4 py-2 rounded-xl font-bold text-sm" style={{ backgroundColor: '#8b5cf6', color: 'white' }}>Exportar</button>
+              <button onClick={autoLayout} className="px-4 py-2 rounded-xl font-bold text-sm" style={{ backgroundColor: '#f59e0b', color: 'white' }}>Organizar</button>
+              {mapId && <button onClick={handleSave} className="px-4 py-2 rounded-xl font-bold text-sm" style={{ backgroundColor: '#3b82f6', color: 'white' }}>Guardar</button>}
             </>
           )}
 
           {selectedNodeIds.size > 0 && (
             <>
-              <button onClick={deleteSelectedNodes} className="px-4 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: '#ef4444', color: 'white' }}>Eliminar ({selectedNodeIds.size})</button>
-              <div className="flex gap-1 px-2 py-1 rounded-full" style={{ backgroundColor: 'var(--color-surface-container-high)' }}>
+              <button onClick={deleteSelectedNodes} className="px-4 py-2 rounded-xl font-bold text-sm" style={{ backgroundColor: '#ef4444', color: 'white' }}>Eliminar ({selectedNodeIds.size})</button>
+              <div className="flex flex-wrap gap-1 p-2 rounded-xl" style={{ backgroundColor: 'var(--color-surface-container-high)' }}>
                 {DEFAULT_NODE_COLORS.map((color) => (
-                  <button key={color} onClick={() => changeNodeColor(color)} className="w-6 h-6 rounded-full border-2" style={{ backgroundColor: color, borderColor: selectedNodeIds.size === 1 && nodes.find(n => n.id === [...selectedNodeIds][0])?.data.color === color ? 'var(--color-on-surface)' : 'transparent' }} />
+                  <button key={color} onClick={() => changeNodeColor(color)} className="w-7 h-7 rounded-full border-2" style={{ backgroundColor: color, borderColor: selectedNodeIds.size === 1 && nodes.find(n => n.id === [...selectedNodeIds][0])?.data.color === color ? 'var(--color-on-surface)' : 'transparent' }} />
                 ))}
               </div>
             </>
           )}
+          
+          <button onClick={openReadOnlyMode} className="px-4 py-2 rounded-xl font-bold text-sm" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}>Modo Lectura</button>
         </div>
       )}
 
@@ -428,6 +433,35 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
       <div className="absolute top-4 right-4 z-20">
         <p className="text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>{readOnly ? 'Click en un nodo para ver recursos' : 'Click para seleccionar • Doble click para editar • Delete para eliminar'}</p>
       </div>
+
+      {!readOnly && stats.total > 0 && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 px-4 py-2 rounded-xl" style={{ backgroundColor: 'var(--color-surface-container-low)', border: '1px solid var(--color-outline)' }}>
+          <div className="flex items-center gap-6 text-xs">
+            <div className="text-center">
+              <p className="text-lg font-bold" style={{ color: 'var(--color-primary)' }}>{stats.progreso}%</p>
+              <p style={{ color: 'var(--color-on-surface-variant)' }}>Progreso</p>
+            </div>
+            <div className="w-px h-8" style={{ backgroundColor: 'var(--color-outline)' }} />
+            <div className="text-center">
+              <p className="font-bold" style={{ color: '#10b981' }}>{stats.completados}</p>
+              <p style={{ color: 'var(--color-on-surface-variant)' }}>Completados</p>
+            </div>
+            <div className="text-center">
+              <p className="font-bold" style={{ color: '#f59e0b' }}>{stats.enProceso}</p>
+              <p style={{ color: 'var(--color-on-surface-variant)' }}>En proceso</p>
+            </div>
+            <div className="text-center">
+              <p className="font-bold" style={{ color: 'var(--color-on-surface-variant)' }}>{stats.pendientes}</p>
+              <p style={{ color: 'var(--color-on-surface-variant)' }}>Pendientes</p>
+            </div>
+            <div className="w-px h-8" style={{ backgroundColor: 'var(--color-outline)' }} />
+            <div className="text-center">
+              <p className="font-bold" style={{ color: 'var(--color-on-surface)' }}>{stats.horasRestantes}h</p>
+              <p style={{ color: 'var(--color-on-surface-variant)' }}>Restantes</p>
+            </div>
+          </div>
+        </div>
+      )}
       
       <ReactFlow
         nodes={nodes}
@@ -485,6 +519,24 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
               </select>
             )}
           </div>
+
+          {!readOnly && (
+            <div className="mb-4">
+              <span className="text-xs font-semibold uppercase" style={{ color: 'var(--color-on-surface-variant)' }}>Horas Estimadas</span>
+              <input
+                type="number"
+                min="0"
+                value={clickedNode.data.horas || 0}
+                onChange={(e) => {
+                  const horas = parseInt(e.target.value) || 0
+                  setNodes((nds) => nds.map((n) => n.id === clickedNode.id ? { ...n, data: { ...n.data, horas } } : n))
+                  setClickedNode({ ...clickedNode, data: { ...clickedNode.data, horas } })
+                }}
+                className="mt-1 px-2 py-1 rounded text-sm w-full"
+                style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)', border: '1px solid var(--color-outline)' }}
+              />
+            </div>
+          )}
 
           <div className="mb-4">
             <h3 className="text-sm font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>Recursos</h3>

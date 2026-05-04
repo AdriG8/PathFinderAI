@@ -5,9 +5,11 @@ import { useState, useRef, useEffect } from 'react'
 // Importa el contexto de autenticación y la URL de la API
 import { useAuth, API_URL } from '../context/AuthContext'
 // Importa iconos de Lucide
-import { Plus, Map, FolderOpen, Upload, LogOut, Send } from 'lucide-react'
+import { Plus, Map, FolderOpen, Upload, LogOut, Send, User } from 'lucide-react'
 // Importa utilidades de sanitización
 import { sanitizeFileName } from '../utils/sanitize'
+// Importa el modal de perfil
+import ProfileModal from '../components/ProfileModal'
 
 // =============================================
 // INTERFACES - Definiciones de tipos
@@ -44,6 +46,12 @@ export default function MainPage() {
   const [roadmaps, setRoadmaps] = useState<Roadmap[]>([])
   // Estado para el menú del usuario
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  // Estado para el modal de perfil
+  const [profileModalOpen, setProfileModalOpen] = useState(false)
+  // Estado para el input de búsqueda
+  const [searchPrompt, setSearchPrompt] = useState('')
+  // Estado para正在 generando
+  const [isGenerating, setIsGenerating] = useState(false)
   // Referencia al input de archivo oculto
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -194,6 +202,44 @@ export default function MainPage() {
     return user?.email || ''
   }
 
+  // Función para generar roadmap con IA
+  const generateRoadmap = async (prompt: string) => {
+    if (!prompt.trim() || isGenerating) return
+    
+    setIsGenerating(true)
+    const token = localStorage.getItem('token')
+    
+    try {
+      const response = await fetch(`${API_URL}/api/generate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ prompt })
+      })
+      
+      if (!response.ok) {
+        const err = await response.json()
+        alert('Error: ' + err.error)
+        return
+      }
+      
+      const generatedData = await response.json()
+      
+      // Guardar en sessionStorage y abrir editor
+      const mapId = `map_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      sessionStorage.setItem(mapId, JSON.stringify(generatedData))
+      window.open(`/roadmap-editor?id=${mapId}`, '_blank')
+      
+    } catch (error) {
+      console.error('Error generating roadmap:', error)
+      alert('Error al generar el roadmap')
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
   // Mientras carga, muestra pantalla de carga
   if (loading) {
     return (
@@ -302,9 +348,18 @@ export default function MainPage() {
                 {/* Menú desplegable del usuario */}
                 {userMenuOpen && sidebarOpen && (
                   <div 
-                    className="absolute left-0 bottom-full mb-2 w-full rounded-xl overflow-hidden shadow-xl"
+                    className="absolute left-0 bottom-full mb-2 w-full rounded-xl overflow-hidden shadow-xl flex flex-col"
                     style={{ backgroundColor: 'var(--color-surface-container-low)', zIndex: 100 }}
                   >
+                    {/* Opción de Mi Perfil */}
+                    <button 
+                      onClick={() => { setUserMenuOpen(false); setProfileModalOpen(true) }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:opacity-80"
+                      style={{ color: 'var(--color-on-surface)' }}
+                    >
+                      <User className="w-5 h-5" />
+                      Mi Perfil
+                    </button>
                     {/* Opción de importar JSON */}
                     <button 
                       onClick={() => fileInputRef.current?.click()}
@@ -339,6 +394,13 @@ export default function MainPage() {
           />
         </nav>
       </aside>
+
+      {/* Modal de Perfil */}
+      <ProfileModal 
+        isOpen={profileModalOpen} 
+        onClose={() => setProfileModalOpen(false)} 
+        user={user}
+      />
 
       {/* Header */}
       <header 
@@ -378,16 +440,16 @@ export default function MainPage() {
         <div className="relative z-10 w-full max-w-3xl px-6 flex flex-col mb-12 gap-4">
           {/* Botones de ejemplos */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 opacity-60 hover:opacity-100 transition-opacity duration-300">
-            <button className="p-3 rounded-2xl transition-all text-xs" style={{ backgroundColor: 'var(--color-surface-container-low)', color: 'var(--color-on-surface-variant)', border: '1px solid rgba(72, 72, 72, 0.05)' }}>
-              Quiero aprender Física Cuántica
+            <button onClick={() => generateRoadmap('Quiero aprender Física Cuántica')} disabled={isGenerating} className="p-3 rounded-2xl transition-all text-xs disabled:opacity-50" style={{ backgroundColor: 'var(--color-surface-container-low)', color: 'var(--color-on-surface-variant)', border: '1px solid rgba(72, 72, 72, 0.05)' }}>
+             Quiero aprender Física Cuántica
             </button>
-            <button className="p-3 rounded-2xl transition-all text-xs" style={{ backgroundColor: 'var(--color-surface-container-low)', color: 'var(--color-on-surface-variant)', border: '1px solid rgba(72, 72, 72, 0.05)' }}>
-              Quiero aprender Desarrollo con IA
+            <button onClick={() => generateRoadmap('Quiero aprender Desarrollo con IA')} disabled={isGenerating} className="p-3 rounded-2xl transition-all text-xs disabled:opacity-50" style={{ backgroundColor: 'var(--color-surface-container-low)', color: 'var(--color-on-surface-variant)', border: '1px solid rgba(72, 72, 72, 0.05)' }}>
+             Quiero aprender Desarrollo con IA
             </button>
-            <button className="p-3 rounded-2xl transition-all text-xs" style={{ backgroundColor: 'var(--color-surface-container-low)', color: 'var(--color-on-surface-variant)', border: '1px solid rgba(72, 72, 72, 0.05)' }}>
+            <button onClick={() => generateRoadmap('Quiero aprender Historia del Arte')} disabled={isGenerating} className="p-3 rounded-2xl transition-all text-xs disabled:opacity-50" style={{ backgroundColor: 'var(--color-surface-container-low)', color: 'var(--color-on-surface-variant)', border: '1px solid rgba(72, 72, 72, 0.05)' }}>
               Quiero aprender Historia del Arte
             </button>
-            <button className="p-3 rounded-2xl transition-all text-xs" style={{ backgroundColor: 'var(--color-surface-container-low)', color: 'var(--color-on-surface-variant)', border: '1px solid rgba(72, 72, 72, 0.05)' }}>
+            <button onClick={() => generateRoadmap('Quiero aprender Estrategia de Negocios')} disabled={isGenerating} className="p-3 rounded-2xl transition-all text-xs disabled:opacity-50" style={{ backgroundColor: 'var(--color-surface-container-low)', color: 'var(--color-on-surface-variant)', border: '1px solid rgba(72, 72, 72, 0.05)' }}>
               Quiero aprender Estrategia de Negocios
             </button>
           </div>
@@ -399,9 +461,21 @@ export default function MainPage() {
               style={{ color: 'var(--color-on-surface)' }}
               placeholder="Pregunta cualquier cosa..." 
               type="text"
+              value={searchPrompt}
+              onChange={(e) => setSearchPrompt(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !isGenerating) generateRoadmap(searchPrompt) }}
             />
-            <button className="ml-4 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all" style={{ backgroundColor: 'var(--color-surface-bright)', color: 'var(--color-on-surface)' }}>
-              <Send className="w-5 h-5" />
+            <button 
+              onClick={() => generateRoadmap(searchPrompt)} 
+              disabled={isGenerating}
+              className="ml-4 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all disabled:opacity-50" 
+              style={{ backgroundColor: 'var(--color-surface-bright)', color: 'var(--color-on-surface)' }}
+            >
+              {isGenerating ? (
+                <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
             </button>
           </div>
         </div>

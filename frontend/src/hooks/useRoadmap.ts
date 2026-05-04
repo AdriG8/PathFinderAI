@@ -41,6 +41,7 @@ export interface RoadmapNodeData {
   status: string
   isEditing?: boolean
   color?: string
+  horas?: number
   resources?: {
     enlaces?: { nombre: string; url: string }[]
   }
@@ -807,3 +808,52 @@ export const DEFAULT_NODE_COLORS = [
   '#14b8a6', // Teal
   '#f97316', // Naranja
 ]
+
+export interface RoadmapStats {
+  total: number
+  completados: number
+  enProceso: number
+  pendientes: number
+  horasTotales: number
+  horasCompletadas: number
+  horasRestantes: number
+  progreso: number
+}
+
+export function calculateRoadmapStats(nodes: Node<RoadmapNodeData>[]): RoadmapStats {
+  const total = nodes.length
+  let completados = 0
+  let enProceso = 0
+  let pendientes = 0
+  let horasTotales = 0
+  let horasCompletadas = 0
+
+  for (const node of nodes) {
+    const status = node.data.status || 'pendiente'
+    const horas = node.data.horas || 0
+    
+    horasTotales += horas
+
+    if (status === 'aprendido') {
+      completados++
+      horasCompletadas += horas
+    } else if (status === 'estudiando') {
+      enProceso++
+    } else {
+      pendientes++
+    }
+  }
+
+  const progreso = total > 0 ? Math.round((completados / total) * 100) : 0
+
+  return {
+    total,
+    completados,
+    enProceso,
+    pendientes,
+    horasTotales,
+    horasCompletadas,
+    horasRestantes: horasTotales - horasCompletadas,
+    progreso
+  }
+}

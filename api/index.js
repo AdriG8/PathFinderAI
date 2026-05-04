@@ -78,6 +78,15 @@ app.post('/api/login', userController.login);
 // POST /api/logout - Cerrar sesión (protegida)
 app.post('/api/logout', userController.authenticateToken, userController.logout);
 
+// GET /api/profile - Obtener perfil del usuario (protegida)
+app.get('/api/profile', userController.authenticateToken, userController.getProfile);
+
+// PUT /api/profile - Actualizar perfil del usuario (protegida)
+app.put('/api/profile', userController.authenticateToken, userController.updateProfile);
+
+// PUT /api/change-password - Cambiar contraseña (protegida)
+app.put('/api/change-password', userController.authenticateToken, userController.changePassword);
+
 // =============================================
 // RUTAS DE GENERACIÓN
 // =============================================

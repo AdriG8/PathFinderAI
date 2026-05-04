@@ -134,6 +134,104 @@ const authenticateToken = async (req, res, next) => {
 };
 
 // =============================================
+// CONTROLADORES DE PERFIL
+// =============================================
+
+// Controlador para obtener el perfil del usuario
+const getProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Obtiene los datos del usuario desde la tabla Usuarios
+    const { data, error } = await supabaseAdmin
+      .from('Usuarios')
+      .select('Nombre, Apellidos, Nivel, Email')
+      .eq('ID', userId)
+      .single();
+    
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    // Devuelve el perfil
+    res.json({
+      nombre: data.Nombre || '',
+      apellidos: data.Apellidos || '',
+      nivel: data.Nivel || 'principiante',
+      email: data.Email || req.user.email
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Controlador para actualizar el perfil
+const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { nombre, apellidos, nivel } = req.body;
+    
+    // Actualiza en la tabla Usuarios
+    const { error } = await supabaseAdmin
+      .from('Usuarios')
+      .update({
+        Nombre: nombre,
+        Apellidos: apellidos,
+        Nivel: nivel
+      })
+      .eq('ID', userId);
+    
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    // También actualiza en user_metadata de auth
+    await supabase.auth.updateUser({
+      data: {
+        first_name: nombre,
+        last_name: apellidos,
+        nivel: nivel
+      }
+    });
+    
+    res.json({ message: 'Perfil actualizado correctamente' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Controlador para cambiar la contraseña
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const email = req.user.email;
+    
+    // Verificar la contraseña actual
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password: currentPassword
+    });
+    
+    if (signInError) {
+      return res.status(400).json({ error: 'La contraseña actual es incorrecta' });
+    }
+    
+    // Actualizar la contraseña
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+    
+    if (updateError) {
+      return res.status(400).json({ error: updateError.message });
+    }
+    
+    res.json({ message: 'Contraseña cambiada correctamente' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// =============================================
 // EXPORTACIÓN DE MÓDULOS
 // =============================================
 
@@ -143,6 +241,10 @@ module.exports = {
   login,
   logout,
   authenticateToken,
+  // Funciones de perfil
+  getProfile,
+  updateProfile,
+  changePassword,
   // Instancias de Supabase
   supabase,
   supabaseAdmin
