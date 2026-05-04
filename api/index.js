@@ -75,6 +75,9 @@ app.post('/api/register', userController.register);
 // POST /api/login - Iniciar sesión
 app.post('/api/login', userController.login);
 
+// POST /api/forgot-password - Solicitar recuperación de contraseña
+app.post('/api/forgot-password', userController.forgotPassword);
+
 // POST /api/logout - Cerrar sesión (protegida)
 app.post('/api/logout', userController.authenticateToken, userController.logout);
 

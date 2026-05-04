@@ -231,6 +231,30 @@ const changePassword = async (req, res) => {
   }
 };
 
+// Controlador para solicitar recuperación de contraseña
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email es requerido' });
+    }
+
+    // Genera el link de recuperación usando Supabase
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.SITE_URL || 'http://localhost:5173'}/reset-password`
+    });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: 'Instructions sent to your email' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // =============================================
 // EXPORTACIÓN DE MÓDULOS
 // =============================================
@@ -241,6 +265,7 @@ module.exports = {
   login,
   logout,
   authenticateToken,
+  forgotPassword,
   // Funciones de perfil
   getProfile,
   updateProfile,
