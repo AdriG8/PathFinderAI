@@ -92,8 +92,8 @@ app.put('/api/profile', userController.authenticateToken, userController.updateP
 // PUT /api/change-password - Cambiar contraseña (protegida)
 app.put('/api/change-password', userController.authenticateToken, userController.changePassword);
 
-// DELETE /api/delete-account - Eliminar cuenta (protegida)
-app.delete('/api/delete-account', userController.authenticateToken, userController.deleteAccount);
+// // DELETE /api/delete-account - Eliminar cuenta (protegida)
+// app.delete('/api/delete-account', userController.authenticateToken, userController.deleteAccount);
 
 // =============================================
 // RUTAS DE GENERACIÓN
