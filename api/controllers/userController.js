@@ -145,7 +145,7 @@ const getProfile = async (req, res) => {
     // Obtiene los datos del usuario desde la tabla Usuarios
     const { data, error } = await supabaseAdmin
       .from('Usuarios')
-      .select('Nombre, Apellidos, Nivel, Email')
+      .select('Nombre, Apellidos, Nivel, Email, Rol')
       .eq('ID', userId)
       .single();
     
@@ -158,6 +158,7 @@ const getProfile = async (req, res) => {
       nombre: data.Nombre || '',
       apellidos: data.Apellidos || '',
       nivel: data.Nivel || 'principiante',
+      rol: data.Rol || 'usuario',
       email: data.Email || req.user.email
     });
   } catch (err) {
@@ -255,6 +256,67 @@ const forgotPassword = async (req, res) => {
   }
 };
 
+// Controlador para eliminar la cuenta
+// DESHABILITADO TEMPORALMENTE
+/*
+const deleteAccount = async (req, res) => {
+  try {
+    const { password } = req.body;
+    const email = req.user.email;
+    const authId = req.user.id;
+    console.log('Iniciando eliminación para:', email, 'authId:', authId);
+    
+    // Verificar la contraseña
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password: password
+    });
+    
+    if (signInError) {
+      console.log('Error verificación contraseña:', signInError.message);
+      return res.status(400).json({ error: 'La contraseña es incorrecta' });
+    }
+    
+    // Buscar el usuario por ID
+    const { data: userData, error: userError } = await supabase
+      .from('Usuarios')
+      .select('ID')
+      .eq('ID', authId)
+      .single();
+    
+    console.log('Usuario en tabla Usuarios:', userData, 'error:', userError);
+    
+    // Si existe el usuario
+    if (userData) {
+      console.log('Eliminando roadmaps para usuario ID:', userData.ID);
+      
+      // 1. Establecer ID_Usuario a NULL en roadmaps (romper FK primero)
+      const { error: roadmapsError } = await supabaseAdmin
+        .from('roadmaps')
+        .update({ ID_Usuario: null })
+        .eq('ID_Usuario', userData.ID);
+      
+      console.log('Error roadmaps:', roadmapsError);
+      
+      console.log('Eliminando usuario ID:', userData.ID);
+      
+      // 2. Borrar usuario de tabla usuarios
+      const { error: deleteError } = await supabaseAdmin
+        .from('Usuarios')
+        .delete()
+        .eq('ID', userData.ID);
+      
+      console.log('Error delete usuario:', deleteError);
+    }
+    
+    res.json({ message: 'Cuenta eliminada correctamente' });
+  } catch (err) {
+    console.error('Error general:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+*/
+
 // =============================================
 // EXPORTACIÓN DE MÓDULOS
 // =============================================
@@ -270,6 +332,7 @@ module.exports = {
   getProfile,
   updateProfile,
   changePassword,
+  deleteAccount,
   // Instancias de Supabase
   supabase,
   supabaseAdmin

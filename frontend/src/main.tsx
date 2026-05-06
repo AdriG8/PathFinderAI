@@ -6,6 +6,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
+import AdminPage from './pages/AdminPage'
 import ConfirmEmail from './pages/ConfirmEmail'
 import EmailConfirmed from './pages/EmailConfirmed'
 import MainPage from './pages/MainPage'
@@ -26,6 +27,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
           <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
           <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
+          <Route path="/admin" element={<PageTransition><AdminPage /></PageTransition>} />
           <Route path="/confirm-email" element={<PageTransition><ConfirmEmail /></PageTransition>} />
           <Route path="/email-confirmed" element={<PageTransition><EmailConfirmed /></PageTransition>} />
           <Route path="/roadmap-editor" element={<PageTransition><ProtectedRoute><RoadmapEditorPage /></ProtectedRoute></PageTransition>} />

@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react'
 // Importa el contexto de autenticación y la URL de la API
 import { useAuth, API_URL } from '../context/AuthContext'
 // Importa iconos de Lucide
-import { Plus, Map, FolderOpen, Upload, LogOut, Send, User } from 'lucide-react'
+import { Plus, Map, FolderOpen, Upload, LogOut, Send, User, MoreVertical, Edit, Trash2 } from 'lucide-react'
 // Importa utilidades de sanitización
 import { sanitizeFileName } from '../utils/sanitize'
 // Importa el modal de perfil
@@ -46,12 +46,17 @@ export default function MainPage() {
   const [roadmaps, setRoadmaps] = useState<Roadmap[]>([])
   // Estado para el menú del usuario
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-  // Estado para el modal de perfil
+// Estado para el modal de perfil
   const [profileModalOpen, setProfileModalOpen] = useState(false)
   // Estado para el input de búsqueda
   const [searchPrompt, setSearchPrompt] = useState('')
-  // Estado para正在 generando
+  // Estado para正在生成
   const [isGenerating, setIsGenerating] = useState(false)
+  // Estado para el menú de roadmap
+  const [activeRoadmapMenu, setActiveRoadmapMenu] = useState<string | null>(null)
+  // Estado para el roadmap que está siendo renombrado (input inline)
+  const [renamingRoadmap, setRenamingRoadmap] = useState<Roadmap | null>(null)
+  const [newRoadmapName, setNewRoadmapName] = useState('')
   // Referencia al input de archivo oculto
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -240,6 +245,90 @@ export default function MainPage() {
     }
   }
 
+  // Función para abrir/cerrar menú de roadmap
+  const handleRoadmapMenuClick = (e: React.MouseEvent, roadmapId: string) => {
+    e.stopPropagation()
+    setActiveRoadmapMenu(activeRoadmapMenu === roadmapId ? null : roadmapId)
+  }
+
+  // Función para iniciar edición de nombre (inline)
+  const handleStartRename = (roadmap: Roadmap) => {
+    setRenamingRoadmap(roadmap)
+    setNewRoadmapName(roadmap.Titulo_Tema)
+    setActiveRoadmapMenu(null)
+  }
+
+  // Función para guardar nuevo nombre
+  const handleSaveRename = async () => {
+    if (!renamingRoadmap || !newRoadmapName.trim()) return
+    
+    const token = localStorage.getItem('token')
+    try {
+      const response = await fetch(`${API_URL}/api/roadmaps/${renamingRoadmap.ID}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ Titulo_Tema: newRoadmapName.trim() })
+      })
+      
+      if (response.ok) {
+        setRoadmaps(roadmaps.map(r => 
+          r.ID === renamingRoadmap.ID ? { ...r, Titulo_Tema: newRoadmapName.trim() } : r
+        ))
+      }
+    } catch (error) {
+      console.error('Error updating roadmap:', error)
+    }
+    setRenamingRoadmap(null)
+    setNewRoadmapName('')
+  }
+
+  // Función para cancelar edición
+  const handleCancelRename = () => {
+    setRenamingRoadmap(null)
+    setNewRoadmapName('')
+  }
+
+  // Función para eliminar roadmap
+  const handleDeleteRoadmap = async (roadmapId: string) => {
+    if (!confirm('¿Eliminar este roadmap?')) return
+    
+    const token = localStorage.getItem('token')
+    try {
+      const response = await fetch(`${API_URL}/api/roadmaps/${roadmapId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        setRoadmaps(roadmaps.filter(r => r.ID !== roadmapId))
+      }
+    } catch (error) {
+      console.error('Error deleting roadmap:', error)
+    }
+    setActiveRoadmapMenu(null)
+  }
+
+  // Efecto para cerrar menú al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('.roadmap-menu-container')) {
+        setActiveRoadmapMenu(null)
+      }
+    }
+    if (activeRoadmapMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [activeRoadmapMenu])
+
   // Mientras carga, muestra pantalla de carga
   if (loading) {
     return (
@@ -292,16 +381,65 @@ export default function MainPage() {
 
           {/* Lista de roadmaps guardados */}
           {roadmaps.map((roadmap) => (
-            <button 
-              key={roadmap.ID}
-              onClick={() => window.open(`/roadmap-editor?id=${roadmap.ID}`, '_blank')}
-              className={`rounded-full flex items-center gap-3 group active:scale-[0.98] transition-all duration-200 ${sidebarOpen ? 'px-4 py-2 w-full' : 'w-10 h-10 justify-center'}`}
-              style={{ backgroundColor: 'var(--color-surface-container-high)', color: '#f5f5f5' }}
-              title={roadmap.Titulo_Tema}
-            >
-              <span className="text-xl"><Map /></span>
-              {sidebarOpen && <span className="text-sm font-medium truncate">{roadmap.Titulo_Tema}</span>}
-            </button>
+            <div key={roadmap.ID} className="relative group roadmap-menu-container">
+              {renamingRoadmap?.ID === roadmap.ID ? (
+                <div className={`flex items-center gap-2 ${sidebarOpen ? 'px-4 py-2 w-full' : 'w-10 h-10 justify-center'}`}>
+                  <input
+                    type="text"
+                    value={newRoadmapName}
+                    onChange={(e) => setNewRoadmapName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); if (e.key === 'Escape') handleCancelRename() }}
+                    className="flex-1 bg-transparent border rounded px-2 py-1 text-sm"
+                    style={{ borderColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}
+                    autoFocus
+                  />
+                  <button onClick={handleSaveRename} className="text-green-500 text-xs">Guardar</button>
+                  <button onClick={handleCancelRename} className="text-red-500 text-xs">Cancelar</button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => window.open(`/roadmap-editor?id=${roadmap.ID}`, '_blank')}
+                  className={`rounded-full flex items-center gap-3 group active:scale-[0.98] transition-all duration-200 ${sidebarOpen ? 'px-4 py-2 w-full' : 'w-10 h-10 justify-center'}`}
+                  style={{ backgroundColor: 'var(--color-surface-container-high)', color: '#f5f5f5' }}
+                  title={roadmap.Titulo_Tema}
+                >
+                  <span className="text-xl"><Map /></span>
+                  {sidebarOpen && <span className="text-sm font-medium truncate">{roadmap.Titulo_Tema}</span>}
+                  {sidebarOpen && (
+                    <button 
+                      onClick={(e) => handleRoadmapMenuClick(e, roadmap.ID)}
+                      className="ml-auto p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                  )}
+                </button>
+              )}
+              {/* Menú dropdown */}
+              {activeRoadmapMenu === roadmap.ID && sidebarOpen && !renamingRoadmap && (
+                <div 
+                  className="absolute right-0 top-full mt-1 w-40 rounded-xl overflow-hidden shadow-xl z-50"
+                  style={{ backgroundColor: 'var(--color-surface-container-low)' }}
+                >
+                  <button 
+                    onClick={() => handleStartRename(roadmap)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:opacity-80"
+                    style={{ color: 'var(--color-on-surface)' }}
+                  >
+                    <Edit className="w-4 h-4" />
+                    Cambiar nombre
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteRoadmap(roadmap.ID)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:opacity-80"
+                    style={{ color: '#ef4444' }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Eliminar
+                  </button>
+                </div>
+              )}
+            </div>
           ))}
 
           {/* Lista de mapas importados */}

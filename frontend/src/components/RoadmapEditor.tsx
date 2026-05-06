@@ -139,6 +139,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
         status: node.data.status,
         isEditing: false,
         color: node.data.color,
+        horas: node.data.horas,
         resources: node.data.resources,
       },
     }))
@@ -196,7 +197,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
       id: newId,
       type: 'custom',
       position: { x: 250 + Math.random() * 200, y: 100 + Math.random() * 200 },
-      data: { label: newNodeName, status: 'pendiente', isEditing: false, resources: { enlaces: [] } },
+      data: { label: newNodeName, status: 'pendiente', isEditing: false, horas: 0, resources: { enlaces: [] } },
     }
     setNodes((nds) => [...nds, newNode])
     setNewNodeName('')
@@ -283,7 +284,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
         nodes: nodes.map((node) => ({
           id: node.id,
           position: node.position,
-          data: { label: node.data.label, status: node.data.status, color: node.data.color, resources: node.data.resources },
+          data: { label: node.data.label, status: node.data.status, color: node.data.color, horas: node.data.horas, resources: node.data.resources },
         })),
         edges: edges.map((edge: Edge) => ({
           id: edge.id,
@@ -435,7 +436,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
       </div>
 
       {!readOnly && stats.total > 0 && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 px-4 py-2 rounded-xl" style={{ backgroundColor: 'var(--color-surface-container-low)', border: '1px solid var(--color-outline)' }}>
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 px-4 py-2 rounded-xl" style={{ backgroundColor: 'var(--color-surface-container-low)', border: '1px solid var(--color-outline)' }}>
           <div className="flex items-center gap-6 text-xs">
             <div className="text-center">
               <p className="text-lg font-bold" style={{ color: 'var(--color-primary)' }}>{stats.progreso}%</p>

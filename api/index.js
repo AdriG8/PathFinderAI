@@ -15,6 +15,8 @@ const userController = require('./controllers/userController');
 const roadmapController = require('./controllers/roadmapController');
 // Controlador de generación (AI)
 const generateController = require('./controllers/generateController');
+// Controlador de admin (stats, requireAdmin)
+const adminController = require('./controllers/adminController');
 
 // =============================================
 // CONFIGURACIÓN DEL SERVIDOR
@@ -90,6 +92,9 @@ app.put('/api/profile', userController.authenticateToken, userController.updateP
 // PUT /api/change-password - Cambiar contraseña (protegida)
 app.put('/api/change-password', userController.authenticateToken, userController.changePassword);
 
+// DELETE /api/delete-account - Eliminar cuenta (protegida)
+app.delete('/api/delete-account', userController.authenticateToken, userController.deleteAccount);
+
 // =============================================
 // RUTAS DE GENERACIÓN
 // =============================================
@@ -112,6 +117,19 @@ app.get('/api/roadmap/test', roadmapController.testRoadmap);
 
 // GET /api/roadmap/:id - Obtener roadmap por ID (protegida)
 app.get('/api/roadmap/:id', userController.authenticateToken, roadmapController.getRoadmapById);
+
+// PUT /api/roadmaps/:id - Actualizar roadmap (protegida)
+app.put('/api/roadmaps/:id', userController.authenticateToken, roadmapController.updateRoadmap);
+
+// DELETE /api/roadmaps/:id - Eliminar roadmap (protegida)
+app.delete('/api/roadmaps/:id', userController.authenticateToken, roadmapController.deleteRoadmap);
+
+// =============================================
+// RUTAS DE ADMIN
+// =============================================
+
+// GET /api/admin/stats - Estadísticas del admin (protegida, solo admin)
+app.get('/api/admin/stats', userController.authenticateToken, adminController.requireAdmin, adminController.getAdminStats);
 
 // =============================================
 // INICIO DEL SERVIDOR

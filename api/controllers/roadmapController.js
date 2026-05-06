@@ -119,6 +119,53 @@ const getRoadmapById = async (req, res) => {
   }
 };
 
+// Controlador para actualizar un roadmap
+const updateRoadmap = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { Titulo_Tema } = req.body;
+    const userId = req.user.id;
+    const supabaseAdmin = req.supabaseAdmin;
+
+    const { error } = await supabaseAdmin
+      .from('Roadmap')
+      .update({ Titulo_Tema })
+      .eq('ID', id)
+      .eq('ID_Usuario', userId);
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: 'Roadmap actualizado' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Controlador para eliminar un roadmap
+const deleteRoadmap = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const supabaseAdmin = req.supabaseAdmin;
+
+    const { error } = await supabaseAdmin
+      .from('Roadmap')
+      .delete()
+      .eq('ID', id)
+      .eq('ID_Usuario', userId);
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: 'Roadmap eliminado' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Endpoint de prueba para verificar la conexión
 const testRoadmap = (req, res) => {
   res.json({ message: 'Test endpoint works', tables: ['Roadmap'] });
@@ -133,5 +180,7 @@ module.exports = {
   saveRoadmap,
   getRoadmaps,
   getRoadmapById,
+  updateRoadmap,
+  deleteRoadmap,
   testRoadmap
 };

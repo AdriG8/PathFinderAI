@@ -16,12 +16,13 @@ interface ProfileModalProps {
 // =============================================
 
 export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProps) {
-  const [activeTab, setActiveTab] = useState<'perfil' | 'seguridad'>('perfil')
+  const [activeTab, setActiveTab] = useState<'perfil' | 'seguridad' | 'eliminar' | 'admin'>('perfil')
   
   // Estados del formulario
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [nivel, setNivel] = useState<'principiante' | 'medio' | 'avanzado'>('principiante')
+  const [userRole, setUserRole] = useState<string>('usuario')
   
   // Estados de contraseña
   const [currentPassword, setCurrentPassword] = useState('')
@@ -30,6 +31,7 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
   
   // Estados de UI
   const [loading, setLoading] = useState(false)
+  const [loadingDelete, setLoadingDelete] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -60,11 +62,13 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
         setFirstName(data.nombre || user?.user_metadata?.first_name || '')
         setLastName(data.apellidos || user?.user_metadata?.last_name || '')
         setNivel(data.nivel || user?.user_metadata?.nivel || 'principiante')
+        setUserRole(data.rol || 'usuario')
       } else {
         console.log('Using fallback - user metadata')
         setFirstName(user?.user_metadata?.first_name || '')
         setLastName(user?.user_metadata?.last_name || '')
         setNivel(user?.user_metadata?.nivel || 'principiante')
+        setUserRole(user?.user_metadata?.rol || 'usuario')
       }
     } catch (error) {
       console.error('Error fetching profile:', error)
@@ -72,6 +76,7 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
       setFirstName(user?.user_metadata?.first_name || '')
       setLastName(user?.user_metadata?.last_name || '')
       setNivel(user?.user_metadata?.nivel || 'principiante')
+      setUserRole(user?.user_metadata?.rol || 'usuario')
     }
   }
   
@@ -197,7 +202,54 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
       setLoading(false)
     }
   }
-  
+
+  // Eliminar cuenta
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm('¿Estás seguro de que quieres eliminar tu cuenta? Esta acción es irreversible.')
+    if (!confirmed) return
+
+    setLoadingDelete(true)
+    setMessage(null)
+
+    if (!currentPassword) {
+      setMessage({ type: 'error', text: 'Introduce tu contraseña para confirmar' })
+      setLoadingDelete(false)
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${API_URL}/api/delete-account`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          password: currentPassword
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setMessage({ type: 'error', text: data.error })
+        return
+      }
+
+      setMessage({ type: 'success', text: 'Cuenta eliminada correctamente' })
+      
+      setTimeout(() => {
+        localStorage.removeItem('token')
+        window.location.href = '/'
+      }, 1500)
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message })
+    } finally {
+      setLoadingDelete(false)
+    }
+  }
+
   // Si no está abierto, no renderizar
   if (!isOpen) return null
   
@@ -262,6 +314,40 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
           >
             Seguridad
           </button>
+          <button
+            onClick={() => setActiveTab('eliminar')}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'eliminar' 
+                ? 'border-b-2' 
+                : ''
+            }`}
+            style={{ 
+              color: activeTab === 'eliminar' 
+                ? '#ef4444' 
+                : 'var(--color-on-surface-variant)',
+              borderColor: activeTab === 'eliminar' ? '#ef4444' : 'transparent'
+            }}
+          >
+            Eliminar
+          </button>
+          {userRole === 'admin' && (
+            <button
+              onClick={() => setActiveTab('admin')}
+              className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'admin' 
+                  ? 'border-b-2' 
+                  : ''
+              }`}
+              style={{ 
+                color: activeTab === 'admin' 
+                  ? 'var(--color-primary)' 
+                  : 'var(--color-on-surface-variant)',
+                borderColor: activeTab === 'admin' ? 'var(--color-primary)' : 'transparent'
+              }}
+            >
+              Admin
+            </button>
+          )}
         </div>
         
         {/* Contenido */}
@@ -408,6 +494,7 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
                 </label>
                 <input
                   type="password"
+                  placeholder="••••••••"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none"
@@ -428,6 +515,7 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
                 </label>
                 <input
                   type="password"
+                  placeholder="••••••••"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none"
@@ -448,6 +536,7 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
                 </label>
                 <input
                   type="password"
+                  placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none"
@@ -463,11 +552,80 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
                 onClick={handleChangePassword}
                 disabled={loading}
                 className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-50"
-                style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
+                style={{ backgroundColor: 'white', color: 'black' }}
               >
                 <Lock className="w-5 h-5" />
                 {loading ? 'Cambiando...' : 'Cambiar contraseña'}
               </button>
+            </div>
+          )}
+          
+          {/* TAB ELIMINAR */}
+          {activeTab === 'eliminar' && (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-4 rounded-xl" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
+                <AlertCircle className="w-5 h-5 mt-0.5" style={{ color: '#ef4444' }} />
+                <div>
+                  <p className="text-sm font-medium" style={{ color: '#ef4444' }}>
+                    Eliminar cuenta
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--color-on-surface-variant)' }}>
+                    Esta acción es irreversible. Perderás todos tus datos.
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label 
+                  className="block text-xs ml-1 uppercase tracking-wider mb-2"
+                  style={{ color: 'var(--color-on-surface-variant)' }}
+                >
+                  Confirma tu contraseña
+                </label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                  style={{ 
+                    backgroundColor: 'var(--color-surface-container-high)',
+                    color: 'var(--color-on-surface)'
+                  }}
+                  disabled
+                />
+              </div>
+
+              <button
+                onClick={handleDeleteAccount}
+                disabled={true}
+                className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-opacity opacity-50 cursor-not-allowed"
+                style={{ backgroundColor: '#ef4444', color: 'white' }}
+              >
+                <AlertCircle className="w-5 h-5" />
+                Eliminar mi cuenta (Deshabilitado)
+              </button>
+            </div>
+          )}
+          
+          {/* TAB ADMIN */}
+          {activeTab === 'admin' && userRole === 'admin' && (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-4 rounded-xl" style={{ backgroundColor: 'var(--color-surface-container-high)' }}>
+                <Lock className="w-5 h-5 mt-0.5" style={{ color: 'var(--color-primary)' }} />
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--color-on-surface)' }}>
+                    Panel de Administrador
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--color-on-surface-variant)' }}>
+                    Gestiona usuarios y configuraciones del sistema.
+                  </p>
+                </div>
+              </div>
+              
+              <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+                Aquí podrás gestionar usuarios, ver estadísticas y más en futuras actualizaciones.
+              </p>
             </div>
           )}
         </div>
