@@ -332,7 +332,7 @@ module.exports = {
   getProfile,
   updateProfile,
   changePassword,
-  deleteAccount,
+  // deleteAccount,
   // Instancias de Supabase
   supabase,
   supabaseAdmin
