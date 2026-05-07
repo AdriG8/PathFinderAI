@@ -62,7 +62,7 @@ const CustomNode = ({ data, id }: { data: RoadmapNodeData; id: string }) => {
 
   return (
     <div
-      className="px-4 py-3 rounded-lg shadow-lg min-w-[180px] text-center"
+      className="px-4 py-3 rounded-lg shadow-lg min-w-[180px] text-center cursor-pointer"
       style={{
         backgroundColor: 'var(--color-surface-container-low)',
         border: `2px solid ${color}`,
@@ -90,12 +90,8 @@ const CustomNode = ({ data, id }: { data: RoadmapNodeData; id: string }) => {
         />
       ) : (
         <div 
-          className="text-sm font-medium cursor-pointer"
+          className="text-sm font-medium"
           style={{ color: 'var(--color-on-surface)' }}
-          onDoubleClick={() => {
-            const event = new CustomEvent('editNodeLabel', { detail: { id } })
-            window.dispatchEvent(event)
-          }}
         >
           {data.label}
         </div>
@@ -208,9 +204,11 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
     setSelectedNodeIds(new Set(selectedNodes.map((n) => n.id)))
   }, [])
 
-  // Click en nodo
+  // Click en nodo - abre el panel de recursos tanto en edición como en modo lectura
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node<RoadmapNodeData>) => {
-    if (event.shiftKey || readOnly) return
+    console.log('onNodeClick called', node.id, readOnly)
+    event.stopPropagation()
+    if (event.shiftKey) return
     setClickedNode(node)
     setShowPanel(true)
   }, [readOnly])
