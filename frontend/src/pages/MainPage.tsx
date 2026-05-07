@@ -10,6 +10,9 @@ import { Plus, Map, FolderOpen, Upload, LogOut, Send, User, MoreVertical, Edit, 
 import { sanitizeFileName } from '../utils/sanitize'
 // Importa el modal de perfil
 import ProfileModal from '../components/ProfileModal'
+// Importa sonner para notificaciones toast (shadcn)
+import { toast } from 'sonner'
+import { Toaster } from '../components/ui/sonner'
 
 // =============================================
 // INTERFACES - Definiciones de tipos
@@ -50,15 +53,21 @@ export default function MainPage() {
   const [profileModalOpen, setProfileModalOpen] = useState(false)
   // Estado para el input de búsqueda
   const [searchPrompt, setSearchPrompt] = useState('')
-  // Estado para正在生成
+  // Estado para indicar si se está generando un roadmap
   const [isGenerating, setIsGenerating] = useState(false)
   // Estado para el menú de roadmap
   const [activeRoadmapMenu, setActiveRoadmapMenu] = useState<string | null>(null)
   // Estado para el roadmap que está siendo renombrado (input inline)
   const [renamingRoadmap, setRenamingRoadmap] = useState<Roadmap | null>(null)
   const [newRoadmapName, setNewRoadmapName] = useState('')
+  // Estado para el menú de mapas importados
+  const [activeImportedMenu, setActiveImportedMenu] = useState<string | null>(null)
+  // Estado para el mapa importado que está siendo renombrado
+  const [renamingImportedMap, setRenamingImportedMap] = useState<ImportedMap | null>(null)
+  const [newImportedMapName, setNewImportedMapName] = useState('')
   // Referencia al input de archivo oculto
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
 
   // Efecto para obtener los roadmaps del usuario
   useEffect(() => {
@@ -75,6 +84,15 @@ export default function MainPage() {
               'Authorization': `Bearer ${token}`
             }
           })
+          
+          // Si el token ha expirado, cerrar sesión
+          if (response.status === 401) {
+            localStorage.removeItem('token')
+            localStorage.removeItem('user')
+            window.location.href = '/login'
+            return
+          }
+          
           // Si es exitosa, guarda los roadmaps
           if (response.ok) {
             const data = await response.json()
@@ -118,10 +136,17 @@ export default function MainPage() {
         }
         // Agrega a la lista
         setImportedMaps((prev) => [...prev, newMap])
+        
+        // Notificación de éxito
+        toast.success('JSON importado', {
+          description: `Se ha importado "${file.name}" correctamente`,
+        })
       } catch (error) {
         // Maneja errores de parseo
         console.error('Error parsing JSON:', error)
-        alert('Error al parsear el archivo JSON')
+        toast.error('Error al importar JSON', {
+          description: 'El archivo no es un JSON válido',
+        })
       }
     }
     // Lee el archivo como texto
@@ -134,9 +159,18 @@ export default function MainPage() {
   }
 
   // Función para abrir un mapa importado
+  // En móvil abre en modo solo lectura (viewer), en desktop abre en editor
   const openImportedMap = (map: ImportedMap) => {
-    // Abre en nueva pestaña
-    window.open(`/roadmap-editor?id=${map.id}`, '_blank')
+    const isMobile = window.innerWidth < 768
+    const page = isMobile ? '/roadmap-viewer' : '/roadmap-editor'
+    window.open(`${page}?id=${map.id}`, '_blank')
+  }
+
+  // Función helper para abrir roadmap según el dispositivo
+  const openRoadmap = (roadmapId: string) => {
+    const isMobile = window.innerWidth < 768
+    const page = isMobile ? '/roadmap-viewer' : '/roadmap-editor'
+    window.open(`${page}?id=${roadmapId}`, '_blank')
   }
 
   // Función para cerrar sesión
@@ -211,6 +245,14 @@ export default function MainPage() {
   const generateRoadmap = async (prompt: string) => {
     if (!prompt.trim() || isGenerating) return
     
+    // Verificar que el usuario esté autenticado
+    if (!user) {
+      toast.info('Inicia sesión', {
+        description: 'Debes iniciar sesión para generar un roadmap',
+      })
+      return
+    }
+    
     setIsGenerating(true)
     const token = localStorage.getItem('token')
     
@@ -226,20 +268,86 @@ export default function MainPage() {
       
       if (!response.ok) {
         const err = await response.json()
-        alert('Error: ' + err.error)
+        const errorMessage = err.error?.toLowerCase() || ''
+        
+        // Manejar errores específicos
+        if (errorMessage.includes('tema no válido') || errorMessage.includes('tema no valido')) {
+          toast.error('Tema no válido', {
+            description: 'El tema introducido no es válido para generar un roadmap',
+          })
+        } else if (errorMessage.includes('high demand') || errorMessage.includes('service unavailable') || errorMessage.includes('saturado')) {
+          toast.error('Servicio saturado', {
+            description: 'Por favor espere y vuelva a intentarlo más tarde',
+          })
+        } else {
+          toast.error('Error al generar roadmap', {
+            description: 'Ha ocurrido un error, vuelve a intentarlo más tarde',
+          })
+        }
         return
       }
       
       const generatedData = await response.json()
+      console.log('Roadmap generado:', generatedData)
       
-      // Guardar en sessionStorage y abrir editor
-      const mapId = `map_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      sessionStorage.setItem(mapId, JSON.stringify(generatedData))
-      window.open(`/roadmap-editor?id=${mapId}`, '_blank')
+      // Guardar roadmap en la base de datos (como objeto JSON, no string)
+      const saveResponse = await fetch(`${API_URL}/api/save`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: prompt,
+          json: generatedData
+        })
+      })
+      
+      if (saveResponse.ok) {
+        const savedRoadmap = await saveResponse.json()
+        console.log('Roadmap guardado en DB:', savedRoadmap)
+        
+        if (savedRoadmap && savedRoadmap.ID) {
+// Agregar a la lista de roadmaps en memoria
+          const newRoadmap: Roadmap = {
+            ID: savedRoadmap.ID,
+            ID_Usuario: user?.id || '',
+            Titulo_Tema: prompt,
+            JSON: JSON.stringify(generatedData),
+            Fecha_Creacion: new Date().toISOString()
+          }
+          setRoadmaps([newRoadmap, ...roadmaps])
+          
+          // Mostrar notificación de éxito
+          toast.success('Roadmap generado', {
+            description: `Se ha creado el roadmap "${prompt}"`,
+          })
+          
+          // Abrir roadmap (editor en desktop, viewer en móvil)
+          openRoadmap(savedRoadmap.ID)
+        } else {
+          throw new Error('No se pudo obtener el ID del roadmap guardado')
+        }
+      } else {
+        // Si falla, usar sessionStorage como fallback
+        const mapId = `map_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        sessionStorage.setItem(mapId, JSON.stringify(generatedData))
+        openRoadmap(mapId)
+      }
       
     } catch (error) {
       console.error('Error generating roadmap:', error)
-      alert('Error al generar el roadmap')
+      const errorMessage = error instanceof Error ? error.message.toLowerCase() : ''
+      
+      if (errorMessage.includes('high demand') || errorMessage.includes('service unavailable') || errorMessage.includes('saturado')) {
+        toast.error('Servicio saturado', {
+          description: 'Por favor espere y vuelva a intentarlo más tarde',
+        })
+      } else {
+        toast.error('Error al generar el roadmap', {
+          description: 'Ha ocurrido un error, vuelve a intentarlo más tarde',
+        })
+      }
     } finally {
       setIsGenerating(false)
     }
@@ -277,9 +385,15 @@ export default function MainPage() {
         setRoadmaps(roadmaps.map(r => 
           r.ID === renamingRoadmap.ID ? { ...r, Titulo_Tema: newRoadmapName.trim() } : r
         ))
+        toast.success('Nombre actualizado', {
+          description: 'El nombre del roadmap se ha actualizado correctamente',
+        })
       }
     } catch (error) {
       console.error('Error updating roadmap:', error)
+      toast.error('Error al actualizar nombre', {
+        description: 'Ha ocurrido un error al actualizar el nombre',
+      })
     }
     setRenamingRoadmap(null)
     setNewRoadmapName('')
@@ -306,28 +420,80 @@ export default function MainPage() {
       
       if (response.ok) {
         setRoadmaps(roadmaps.filter(r => r.ID !== roadmapId))
+        toast.success('Roadmap eliminado', {
+          description: 'El roadmap ha sido eliminado correctamente',
+        })
       }
     } catch (error) {
       console.error('Error deleting roadmap:', error)
+      toast.error('Error al eliminar', {
+        description: 'Ha ocurrido un error al eliminar el roadmap',
+      })
     }
     setActiveRoadmapMenu(null)
+  }
+
+  // Función para abrir menú de mapa importado
+  const handleImportedMenuClick = (e: React.MouseEvent, mapId: string) => {
+    e.stopPropagation()
+    setActiveImportedMenu(activeImportedMenu === mapId ? null : mapId)
+  }
+
+  // Función para iniciar edición de nombre de mapa importado
+  const handleStartRenameImported = (map: ImportedMap) => {
+    setRenamingImportedMap(map)
+    setNewImportedMapName(map.name)
+    setActiveImportedMenu(null)
+  }
+
+  // Función para guardar nuevo nombre de mapa importado
+  const handleSaveRenameImported = () => {
+    if (!renamingImportedMap || !newImportedMapName.trim()) return
+    
+    setImportedMaps(importedMaps.map(m => 
+      m.id === renamingImportedMap.id ? { ...m, name: newImportedMapName.trim() } : m
+    ))
+    
+    toast.success('Nombre actualizado', {
+      description: 'El nombre del mapa se ha actualizado correctamente',
+    })
+    
+    setRenamingImportedMap(null)
+    setNewImportedMapName('')
+  }
+
+  // Función para cancelar edición de mapa importado
+  const handleCancelRenameImported = () => {
+    setRenamingImportedMap(null)
+    setNewImportedMapName('')
+  }
+
+  // Función para eliminar mapa importado
+  const handleDeleteImported = (mapId: string) => {
+    setImportedMaps(importedMaps.filter(m => m.id !== mapId))
+    sessionStorage.removeItem(mapId)
+    setActiveImportedMenu(null)
+    toast.success('Mapa eliminado', {
+      description: 'El mapa importado ha sido eliminado',
+    })
   }
 
   // Efecto para cerrar menú al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement
-      if (!target.closest('.roadmap-menu-container')) {
+      if (!target.closest('.roadmap-menu-container') && !target.closest('.imported-menu-container')) {
         setActiveRoadmapMenu(null)
+        setActiveImportedMenu(null)
       }
     }
-    if (activeRoadmapMenu) {
+    if (activeRoadmapMenu || activeImportedMenu) {
       document.addEventListener('mousedown', handleClickOutside)
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [activeRoadmapMenu])
+  }, [activeRoadmapMenu, activeImportedMenu])
 
   // Mientras carga, muestra pantalla de carga
   if (loading) {
@@ -342,6 +508,9 @@ export default function MainPage() {
   return (
     // Contenedor principal
     <div className="relative h-screen" style={{ backgroundColor: 'var(--color-surface)' }}>
+      {/* Toaster para notificaciones */}
+      <Toaster position="top-right" />
+      
       {/* Barra lateral fija */}
       <aside 
         className="fixed left-0 top-0 h-full flex flex-col py-4 px-3 z-30 transition-all duration-200"
@@ -398,20 +567,21 @@ export default function MainPage() {
                 </div>
               ) : (
                 <button 
-                  onClick={() => window.open(`/roadmap-editor?id=${roadmap.ID}`, '_blank')}
+                  onClick={() => openRoadmap(roadmap.ID)}
                   className={`rounded-full flex items-center gap-3 group active:scale-[0.98] transition-all duration-200 ${sidebarOpen ? 'px-4 py-2 w-full' : 'w-10 h-10 justify-center'}`}
                   style={{ backgroundColor: 'var(--color-surface-container-high)', color: '#f5f5f5' }}
                   title={roadmap.Titulo_Tema}
                 >
                   <span className="text-xl"><Map /></span>
-                  {sidebarOpen && <span className="text-sm font-medium truncate">{roadmap.Titulo_Tema}</span>}
+                  {sidebarOpen && <span className="text-sm font-medium truncate max-w-[120px]">{roadmap.Titulo_Tema}</span>}
                   {sidebarOpen && (
-                    <button 
+                    <div 
                       onClick={(e) => handleRoadmapMenuClick(e, roadmap.ID)}
-                      className="ml-auto p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Opciones"
+                      className="ml-auto p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                     >
                       <MoreVertical className="w-4 h-4" />
-                    </button>
+                    </div>
                   )}
                 </button>
               )}
@@ -444,16 +614,65 @@ export default function MainPage() {
 
           {/* Lista de mapas importados */}
           {importedMaps.map((map, index) => (
-            <button 
-              key={index}
-              onClick={() => openImportedMap(map)}
-              className={`rounded-full flex items-center gap-3 group active:scale-[0.98] transition-all duration-200 ${sidebarOpen ? 'px-4 py-2 w-full' : 'w-10 h-10 justify-center'}`}
-              style={{ backgroundColor: 'var(--color-surface-container-high)', color: '#f5f5f5' }}
-              title={sanitizeFileName(map.name)}
-            >
-              <span className="text-xl"><FolderOpen /></span>
-              {sidebarOpen && <span className="text-sm font-medium truncate">{sanitizeFileName(map.name)}</span>}
-            </button>
+            <div key={index} className="relative group imported-menu-container">
+              {renamingImportedMap?.id === map.id ? (
+                <div className={`flex items-center gap-2 ${sidebarOpen ? 'px-4 py-2 w-full' : 'w-10 h-10 justify-center'}`}>
+                  <input
+                    type="text"
+                    value={newImportedMapName}
+                    onChange={(e) => setNewImportedMapName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRenameImported(); if (e.key === 'Escape') handleCancelRenameImported() }}
+                    className="flex-1 bg-transparent border rounded px-2 py-1 text-sm"
+                    style={{ borderColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}
+                    autoFocus
+                  />
+                  <button onClick={handleSaveRenameImported} className="text-green-500 text-xs">Guardar</button>
+                  <button onClick={handleCancelRenameImported} className="text-red-500 text-xs">Cancelar</button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => openImportedMap(map)}
+                  className={`rounded-full flex items-center gap-3 group active:scale-[0.98] transition-all duration-200 ${sidebarOpen ? 'px-4 py-2 w-full' : 'w-10 h-10 justify-center'}`}
+                  style={{ backgroundColor: 'var(--color-surface-container-high)', color: '#f5f5f5' }}
+                  title={sanitizeFileName(map.name)}
+                >
+                  <span className="text-xl"><FolderOpen /></span>
+                  {sidebarOpen && <span className="text-sm font-medium truncate max-w-[120px]">{sanitizeFileName(map.name)}</span>}
+                  {sidebarOpen && (
+                    <div 
+                      onClick={(e) => handleImportedMenuClick(e, map.id)}
+                      className="ml-auto p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </div>
+                  )}
+                </button>
+              )}
+              {/* Menú dropdown */}
+              {activeImportedMenu === map.id && sidebarOpen && !renamingImportedMap && (
+                <div 
+                  className="absolute right-0 top-full mt-1 w-40 rounded-xl overflow-hidden shadow-xl z-50"
+                  style={{ backgroundColor: 'var(--color-surface-container-low)' }}
+                >
+                  <button 
+                    onClick={() => handleStartRenameImported(map)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:opacity-80"
+                    style={{ color: 'var(--color-on-surface)' }}
+                  >
+                    <Edit className="w-4 h-4" />
+                    Cambiar nombre
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteImported(map.id)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:opacity-80"
+                    style={{ color: '#ef4444' }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Eliminar
+                  </button>
+                </div>
+              )}
+            </div>
           ))}
 
           {/* Sección del usuario (solo si hay usuario) */}

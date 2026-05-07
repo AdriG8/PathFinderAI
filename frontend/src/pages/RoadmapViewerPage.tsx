@@ -101,6 +101,11 @@ export default function RoadmapViewerPage() {
     )
   }
 
-  // Renderiza el editor en modo solo lectura
-  return <RoadmapEditor initialData={data} readOnly={true} />
+  // =============================================
+  // RENDER
+  // =============================================
+
+  // Renderiza el editor en modo solo lectura (readOnly=true)
+  // autoLayoutOnMount=true para ordenar el mapa automáticamente al cargar
+  return <RoadmapEditor initialData={data} readOnly={true} autoLayoutOnMount={true} />
 }

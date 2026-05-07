@@ -21,7 +21,7 @@ El token se obtiene tras hacer login o register y debe almacenarse en el cliente
 ### Health Check
 
 #### GET /api/health
-Verifica que la API está funcionando.
+Verifica que la API está funcionando y el estado de las variables de entorno.
 
 **Respuesta:**
 ```json
@@ -36,20 +36,31 @@ Verifica que la API está funcionando.
 }
 ```
 
+Si faltan variables de entorno:
+```json
+{
+  "status": "ok",
+  "message": "API funcionando pero faltan variables de entorno",
+  "checks": {
+    "server": "ok",
+    "environment": "warning"
+  },
+  "missingEnvVars": ["GEMINI_API_KEY"]
+}
+```
+
 ---
 
-### Autenticación
+## Autenticación
 
-#### POST /api/register
+### POST /api/register
 Registra un nuevo usuario.
 
 **Body:**
 ```json
 {
   "email": "usuario@email.com",
-  "password": "contraseña123",
-  "nombre": "Nombre",
-  "apellidos": "Apellidos"
+  "password": "contraseña123"
 }
 ```
 
@@ -74,7 +85,7 @@ Registra un nuevo usuario.
 
 ---
 
-#### POST /api/login
+### POST /api/login
 Inicia sesión con email y contraseña.
 
 **Body:**
@@ -89,7 +100,24 @@ Inicia sesión con email y contraseña.
 
 ---
 
-#### POST /api/logout
+### POST /api/forgot-password
+Solicita un email para recuperar la contraseña.
+
+**Body:**
+```json
+{
+  "email": "usuario@email.com"
+}
+```
+
+**Respuesta:**
+```json
+{ "message": "Correo de recuperación enviado" }
+```
+
+---
+
+### POST /api/logout
 Cierra la sesión del usuario.
 
 **Headers:** `Authorization: Bearer <token>`
@@ -101,9 +129,26 @@ Cierra la sesión del usuario.
 
 ---
 
-### Perfil de Usuario
+### POST /api/forgot-password
+Solicita un email para recuperar la contraseña olvidada.
 
-#### GET /api/profile
+**Body:**
+```json
+{
+  "email": "usuario@email.com"
+}
+```
+
+**Respuesta:**
+```json
+{ "message": "Correo de recuperación enviado" }
+```
+
+---
+
+## Perfil de Usuario
+
+### GET /api/profile
 Obtiene los datos del perfil del usuario autenticado.
 
 **Headers:** `Authorization: Bearer <token>`
@@ -120,7 +165,7 @@ Obtiene los datos del perfil del usuario autenticado.
 
 ---
 
-#### PUT /api/profile
+### PUT /api/profile
 Actualiza los datos del perfil.
 
 **Headers:** `Authorization: Bearer <token>`
@@ -143,7 +188,7 @@ Opciones de nivel: `principiante`, `medio`, `avanzada`
 
 ---
 
-#### PUT /api/change-password
+### PUT /api/change-password
 Cambia la contraseña del usuario.
 
 **Headers:** `Authorization: Bearer <token>`
@@ -161,12 +206,17 @@ Cambia la contraseña del usuario.
 { "message": "Contraseña cambiada correctamente" }
 ```
 
+**Errores:**
+```json
+{ "error": "La contraseña actual es incorrecta" }
+```
+
 ---
 
-### Generación de Roadmap
+## Generación de Roadmap
 
-#### POST /api/generate
-Genera un roadmap usando IA (Gemini).
+### POST /api/generate
+Genera un roadmap usando IA (Google Gemini).
 
 **Headers:** `Authorization: Bearer <token>`
 
@@ -177,19 +227,29 @@ Genera un roadmap usando IA (Gemini).
 }
 ```
 
+**Proceso:**
+1. Obtiene el nivel del usuario desde la base de datos
+2. Envía el prompt a Gemini con instrucciones para crear un roadmap JSON
+3. Devuelve el roadmap con nodos y conexiones
+
 **Respuesta:**
 ```json
 {
   "nodes": [
     {
       "id": "1",
-      "type": "input",
+      "type": "custom",
       "data": {
         "label": "Tema principal",
         "status": "pendiente",
         "isEditing": false,
         "horas": 2,
-        "resources": { "enlaces": [] }
+        "resources": {
+          "enlaces": [
+            { "nombre": "Doc oficial", "url": "https://react.dev" },
+            { "nombre": "Tutorial", "url": "https://ejemplo.com" }
+          ]
+        }
       }
     }
   ],
@@ -203,20 +263,31 @@ Genera un roadmap usando IA (Gemini).
 - El roadmap se adapta al nivel del usuario (principiante/medio/avanzada)
 - Aprox. 50 nodos de profundidad
 - Cada nodo incluye `horas` estimadas
+- Cada nodo incluye recursos con enlaces válidos
+
+**Errores específicos:**
+```json
+{ "error": "GEMINI_API_KEY no configurada" }
+```
+```json
+{ "error": "El tema no es válido para generar un roadmap" }
+```
+```json
+{ "error": "Servicio no disponible, intente más tarde" }
+```
 
 ---
 
-### Roadmaps
+## Roadmaps
 
-#### POST /api/save
-Guarda un roadmap en la base de datos.
+### POST /api/save
+Guarda o actualiza un roadmap en la base de datos.
 
 **Headers:** `Authorization: Bearer <token>`
 
 **Body:**
 ```json
 {
-  "id": "roadmap_123",
   "title": "Mi Roadmap",
   "json": {
     "nodes": [...],
@@ -225,14 +296,29 @@ Guarda un roadmap en la base de datos.
 }
 ```
 
+Para actualizar un roadmap existente, incluir el `id`:
+```json
+{
+  "id": "uuid-del-roadmap",
+  "title": "Mi Roadmap Actualizado",
+  "json": { ... }
+}
+```
+
 **Respuesta:**
 ```json
-{ "message": "Roadmap guardado correctamente", "id": "roadmap_123" }
+{
+  "ID": "uuid-generado",
+  "ID_Usuario": "user_id",
+  "Titulo_Tema": "Mi Roadmap",
+  "JSON": { ... },
+  "Fecha_Creacion": "2024-01-01T12:00:00.000Z"
+}
 ```
 
 ---
 
-#### GET /api/roadmaps
+### GET /api/roadmaps
 Obtiene todos los roadmaps del usuario.
 
 **Headers:** `Authorization: Bearer <token>`
@@ -252,12 +338,12 @@ Obtiene todos los roadmaps del usuario.
 
 ---
 
-#### GET /api/roadmap/:id
+### GET /api/roadmap/:id
 Obtiene un roadmap específico por ID.
 
 **Headers:** `Authorization: Bearer <token>`
 
-**Params:** `id` - ID del roadmap
+**Parámetros:** `id` - UUID del roadmap
 
 **Respuesta:**
 ```json
@@ -270,10 +356,15 @@ Obtiene un roadmap específico por ID.
 }
 ```
 
+**Error (no encontrado):**
+```json
+{ "error": "Roadmap no encontrado" }
+```
+
 ---
 
-#### GET /api/roadmap/test
-Endpoint de prueba público (sin auth).
+### GET /api/roadmap/test
+Endpoint de prueba público (sin autenticación).
 
 **Respuesta:**
 ```json
@@ -282,13 +373,92 @@ Endpoint de prueba público (sin auth).
 
 ---
 
-## Códigos de Error
+### PUT /api/roadmaps/:id
+Actualiza un roadmap existente (ej. cambiar título).
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Parámetros:** `id` - UUID del roadmap
+
+**Body:**
+```json
+{
+  "Titulo_Tema": "Nuevo título del roadmap"
+}
+```
+
+**Respuesta:**
+```json
+{ "message": "Roadmap actualizado correctamente" }
+```
+
+---
+
+### DELETE /api/roadmaps/:id
+Elimina un roadmap de la base de datos.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Parámetros:** `id` - UUID del roadmap
+
+**Respuesta:**
+```json
+{ "message": "Roadmap eliminado correctamente" }
+```
+
+---
+
+## Administración
+
+### GET /api/admin/stats
+Obtiene estadísticas globales de la aplicación (solo admin).
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Respuesta:**
+```json
+{
+  "totalUsuarios": 150,
+  "totalRoadmaps": 320,
+  "roadmapsPorNivel": {
+    "principiante": 100,
+    "medio": 150,
+    "avanzada": 70
+  }
+}
+```
+
+**Error (sin permisos):**
+```json
+{ "error": "Acceso restringido a administradores" }
+```
+
+---
+
+## Códigos de Estado HTTP
 
 | Código | Descripción |
 |--------|-------------|
-| 400 | Error en la petición (datos inválidos) |
+| 200 | OK - Petición exitosa |
+| 400 | Error en la petición (datos inválidos, tema no válido) |
 | 401 | No autenticado (token inválido o ausente) |
+| 403 | Prohibido (sin permisos, ej. endpoint de admin) |
+| 404 | Recurso no encontrado |
 | 500 | Error interno del servidor |
+
+---
+
+## Códigos de Error Comunes
+
+```json
+{ "error": "User already registered" }
+{ "error": "Invalid login credentials" }
+{ "error": "Token expired" }
+{ "error": "Roadmap no encontrado" }
+{ "error": "GEMINI_API_KEY no configurada" }
+{ "error": "El tema no es válido para generar un roadmap" }
+{ "error": "Acceso restringido a administradores" }
+```
 
 ---
 
@@ -326,3 +496,11 @@ const config = {
 }
 const response = await axios.get(`${API_URL}/api/profile`, config)
 ```
+
+---
+
+## Notas
+
+- Todos los endpoints de usuario requieren autenticación excepto: `/api/health`, `/api/register`, `/api/login`, `/api/forgot-password`, `/api/roadmap/test`
+- El endpoint de eliminación de cuenta (`DELETE /api/delete-account`) está deshabilitado temporalmente
+- La generación de roadmaps usa el modelo `gemini-flash-latest` de Google Gemini

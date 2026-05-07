@@ -26,11 +26,16 @@ import { getStatusColor, DEFAULT_NODE_COLORS, type RoadmapNodeData, calculateRoa
 // INTERFACES
 // =============================================
 
+// =============================================
+// INTERFAZ DE PROPS DEL EDITOR
+// =============================================
+
 interface RoadmapEditorProps {
-  initialData: any
-  readOnly?: boolean
-  mapId?: string
-  onSave?: (data: any) => void
+  initialData: any              // Datos iniciales del roadmap (nodes y edges)
+  readOnly?: boolean           // Modo lectura (sin edición)
+  mapId?: string              // ID del roadmap para guardar
+  onSave?: (data: any) => void // Callback para guardar cambios
+  autoLayoutOnMount?: boolean // Si true, ordena el mapa automáticamente al cargar
 }
 
 // =============================================
@@ -64,6 +69,7 @@ const CustomNode = ({ data, id }: { data: RoadmapNodeData; id: string }) => {
       }}
     >
       <Handle type="target" position={Position.Top} style={{ background: color }} />
+      <Handle type="target" position={Position.Left} id="left" style={{ background: color, left: -6 }} />
       
       {data.isEditing ? (
         <input
@@ -100,6 +106,7 @@ const CustomNode = ({ data, id }: { data: RoadmapNodeData; id: string }) => {
       </div>
       
       <Handle type="source" position={Position.Bottom} style={{ background: color }} />
+      <Handle type="source" position={Position.Right} id="right" style={{ background: color, right: -6 }} />
     </div>
   )
 }
@@ -112,7 +119,7 @@ const nodeTypes: NodeTypes = {
 // COMPONENTE PRINCIPAL
 // =============================================
 
-export default function RoadmapEditor({ initialData, readOnly = false, mapId, onSave }: RoadmapEditorProps) {
+export default function RoadmapEditor({ initialData, readOnly = false, mapId, onSave, autoLayoutOnMount = false }: RoadmapEditorProps) {
   // Estados locales de UI
   const [newNodeName, setNewNodeName] = useState('')
   const [showAddInput, setShowAddInput] = useState(false)
@@ -127,22 +134,54 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
   const [isExporting, setIsExporting] = useState(false)
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null)
 
+  // Función para calcular posiciones de nodos usando dagre
+  const calculatePositions = (nodes: any[], edges: any[]) => {
+    const dagreGraph = new dagre.graphlib.Graph()
+    dagreGraph.setDefaultEdgeLabel(() => ({}))
+    dagreGraph.setGraph({ rankdir: 'TB', nodesep: 50, ranksep: 80 })
+    
+    const nodeWidth = 200
+    const nodeHeight = 120
+    
+    nodes.forEach((node) => dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight }))
+    edges.forEach((edge) => dagreGraph.setEdge(edge.source, edge.target))
+    
+    dagre.layout(dagreGraph)
+    
+    return nodes.map((node) => {
+      const nodeWithPosition = dagreGraph.node(node.id)
+      if (nodeWithPosition) {
+        return { ...node, position: { x: nodeWithPosition.x - nodeWidth / 2, y: nodeWithPosition.y - nodeHeight / 2 } }
+      }
+      return { ...node, position: { x: Math.random() * 200, y: Math.random() * 200 } }
+    })
+  }
+
   // Preparar datos iniciales para ReactFlow
   const initialNodes = useMemo(() => {
     if (!initialData?.nodes) return []
-    return initialData.nodes.map((node: any) => ({
+    
+    const nodesWithPosition = initialData.nodes.map((node: any) => ({
       id: node.id,
-      type: 'custom',
-      position: node.position,
+      type: 'custom', // Normalizar todos los tipos a custom
+      position: node.position || { x: 0, y: 0 },
       data: {
-        label: node.data.label,
-        status: node.data.status,
+        label: node.data?.label || '',
+        status: node.data?.status || 'pendiente',
         isEditing: false,
-        color: node.data.color,
-        horas: node.data.horas,
-        resources: node.data.resources,
+        color: node.data?.color,
+        horas: node.data?.horas || 0,
+        resources: node.data?.resources || { enlaces: [] },
       },
     }))
+    
+    // Si hay nodos sin posición, calcular posiciones
+    const hasPositions = nodesWithPosition.some((n: any) => n.position?.x !== undefined && n.position?.y !== undefined)
+    if (!hasPositions && nodesWithPosition.length > 0) {
+      return calculatePositions(nodesWithPosition, initialData.edges || [])
+    }
+    
+    return nodesWithPosition
   }, [initialData])
 
   const initialEdges = useMemo(() => {
@@ -357,7 +396,33 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
     window.open(`/roadmap-viewer?id=${currentMapId}`, '_blank')
   }, [mapId, nodes, edges])
 
-  // Efectos
+  // Efectos - Auto layout solo una vez al cargar
+  useEffect(() => {
+    if (autoLayoutOnMount && nodes.length > 0) {
+      const timer = setTimeout(() => {
+        const dagreGraph = new dagre.graphlib.Graph()
+        dagreGraph.setDefaultEdgeLabel(() => ({}))
+        dagreGraph.setGraph({ rankdir: layoutDirection })
+        
+        const nodeWidth = 200
+        const nodeHeight = 120
+        
+        nodes.forEach((node) => dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight }))
+        edges.forEach((edge) => dagreGraph.setEdge(edge.source, edge.target))
+        
+        dagre.layout(dagreGraph)
+        
+        const layoutedNodes = nodes.map((node) => {
+          const nodeWithPosition = dagreGraph.node(node.id)
+          return { ...node, position: { x: nodeWithPosition.x - nodeWidth / 2, y: nodeWithPosition.y - nodeHeight / 2 } }
+        })
+        
+        setNodes(layoutedNodes)
+      }, 200)
+      return () => clearTimeout(timer)
+    }
+  }, [])
+
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('updateNodeLabel', handleUpdateNodeLabel as EventListener)

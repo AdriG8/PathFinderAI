@@ -14,11 +14,14 @@ const saveRoadmap = async (req, res) => {
 
     // Si existe ID, actualiza el roadmap existente
     if (id) {
+      // Parsear el string JSON a objeto
+      const parsedJson = typeof json === 'string' ? JSON.parse(json) : json;
+      
       const { data, error } = await supabaseAdmin
         .from('Roadmap')
         .update({ 
           "Titulo_Tema": title,
-          "JSON": json
+          "JSON": parsedJson
         })
         .eq('ID', id)
         .eq('ID_Usuario', userId);
@@ -33,16 +36,22 @@ const saveRoadmap = async (req, res) => {
     } 
     // Si no existe ID, crea un nuevo roadmap
     else {
+      // Parsear el string JSON a objeto
+      const parsedJson = typeof json === 'string' ? JSON.parse(json) : json;
+      
       const { data, error } = await supabaseAdmin
         .from('Roadmap')
         .insert([{
           "ID_Usuario": userId,
           "Titulo_Tema": title,
-          "JSON": json
-        }]);
+          "JSON": parsedJson
+        }])
+        .select()
+        .single();
 
       // Si hay error, lo devuelve
       if (error) {
+        console.log('Error guardando roadmap:', error.message);
         return res.status(400).json({ error: error.message });
       }
 

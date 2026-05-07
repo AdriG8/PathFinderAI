@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X, Save, Lock, AlertCircle, Check } from 'lucide-react'
+import { toast } from 'sonner'
 
 // =============================================
 // INTERFAZ DE PROPS
@@ -16,13 +17,12 @@ interface ProfileModalProps {
 // =============================================
 
 export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProps) {
-  const [activeTab, setActiveTab] = useState<'perfil' | 'seguridad' | 'eliminar' | 'admin'>('perfil')
+  const [activeTab, setActiveTab] = useState<'perfil' | 'seguridad' | 'eliminar'>('perfil')
   
   // Estados del formulario
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [nivel, setNivel] = useState<'principiante' | 'medio' | 'avanzado'>('principiante')
-  const [userRole, setUserRole] = useState<string>('usuario')
   
   // Estados de contraseña
   const [currentPassword, setCurrentPassword] = useState('')
@@ -62,13 +62,11 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
         setFirstName(data.nombre || user?.user_metadata?.first_name || '')
         setLastName(data.apellidos || user?.user_metadata?.last_name || '')
         setNivel(data.nivel || user?.user_metadata?.nivel || 'principiante')
-        setUserRole(data.rol || 'usuario')
       } else {
         console.log('Using fallback - user metadata')
         setFirstName(user?.user_metadata?.first_name || '')
         setLastName(user?.user_metadata?.last_name || '')
         setNivel(user?.user_metadata?.nivel || 'principiante')
-        setUserRole(user?.user_metadata?.rol || 'usuario')
       }
     } catch (error) {
       console.error('Error fetching profile:', error)
@@ -76,7 +74,6 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
       setFirstName(user?.user_metadata?.first_name || '')
       setLastName(user?.user_metadata?.last_name || '')
       setNivel(user?.user_metadata?.nivel || 'principiante')
-      setUserRole(user?.user_metadata?.rol || 'usuario')
     }
   }
   
@@ -111,12 +108,16 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
           }
           localStorage.setItem('user', JSON.stringify(user))
         }
-        setMessage({ type: 'success', text: 'Perfil actualizado (local)' })
+        toast.success('Perfil actualizado', {
+          description: 'Los cambios se han guardado localmente',
+        })
         setLoading(false)
         return
       }
       
-      setMessage({ type: 'success', text: 'Perfil actualizado correctamente' })
+      toast.success('Perfil actualizado', {
+        description: 'Los cambios se han guardado correctamente',
+      })
       
       // Actualizar el usuario en el contexto
       if (user) {
@@ -138,9 +139,13 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
           nivel: nivel
         }
         localStorage.setItem('user', JSON.stringify(user))
-        setMessage({ type: 'success', text: 'Perfil actualizado (sin conexión)' })
+        toast.success('Perfil actualizado', {
+          description: 'Los cambios se han guardado (sin conexión)',
+        })
       } else {
-        setMessage({ type: 'error', text: error.message })
+        toast.error('Error al actualizar perfil', {
+          description: error.message,
+        })
       }
     } finally {
       setLoading(false)
@@ -154,19 +159,25 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
     
     // Validaciones
     if (!currentPassword) {
-      setMessage({ type: 'error', text: 'Introduce tu contraseña actual' })
+      toast.error('Error al cambiar contraseña', {
+        description: 'Introduce tu contraseña actual',
+      })
       setLoading(false)
       return
     }
     
     if (!newPassword || newPassword.length < 6) {
-      setMessage({ type: 'error', text: 'La nueva contraseña debe tener al menos 6 caracteres' })
+      toast.error('Error al cambiar contraseña', {
+        description: 'La nueva contraseña debe tener al menos 6 caracteres',
+      })
       setLoading(false)
       return
     }
     
     if (newPassword !== confirmPassword) {
-      setMessage({ type: 'error', text: 'Las contraseñas no coinciden' })
+      toast.error('Error al cambiar contraseña', {
+        description: 'Las contraseñas no coinciden',
+      })
       setLoading(false)
       return
     }
@@ -188,16 +199,22 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
       const data = await response.json()
       
       if (!response.ok) {
-        setMessage({ type: 'error', text: data.error })
+        toast.error('Error al cambiar contraseña', {
+          description: data.error,
+        })
         return
       }
       
-      setMessage({ type: 'success', text: 'Contraseña cambiada correctamente' })
+      toast.success('Contraseña cambiada', {
+        description: 'Tu contraseña ha sido actualizada correctamente',
+      })
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message })
+      toast.error('Error al cambiar contraseña', {
+        description: error.message,
+      })
     } finally {
       setLoading(false)
     }
@@ -330,24 +347,6 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
           >
             Eliminar
           </button>
-          {userRole === 'admin' && (
-            <button
-              onClick={() => setActiveTab('admin')}
-              className={`flex-1 py-3 text-sm font-medium transition-colors ${
-                activeTab === 'admin' 
-                  ? 'border-b-2' 
-                  : ''
-              }`}
-              style={{ 
-                color: activeTab === 'admin' 
-                  ? 'var(--color-primary)' 
-                  : 'var(--color-on-surface-variant)',
-                borderColor: activeTab === 'admin' ? 'var(--color-primary)' : 'transparent'
-              }}
-            >
-              Admin
-            </button>
-          )}
         </div>
         
         {/* Contenido */}
@@ -605,27 +604,6 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
                 <AlertCircle className="w-5 h-5" />
                 Eliminar mi cuenta (Deshabilitado)
               </button>
-            </div>
-          )}
-          
-          {/* TAB ADMIN */}
-          {activeTab === 'admin' && userRole === 'admin' && (
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 p-4 rounded-xl" style={{ backgroundColor: 'var(--color-surface-container-high)' }}>
-                <Lock className="w-5 h-5 mt-0.5" style={{ color: 'var(--color-primary)' }} />
-                <div>
-                  <p className="text-sm font-medium" style={{ color: 'var(--color-on-surface)' }}>
-                    Panel de Administrador
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: 'var(--color-on-surface-variant)' }}>
-                    Gestiona usuarios y configuraciones del sistema.
-                  </p>
-                </div>
-              </div>
-              
-              <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-                Aquí podrás gestionar usuarios, ver estadísticas y más en futuras actualizaciones.
-              </p>
             </div>
           )}
         </div>

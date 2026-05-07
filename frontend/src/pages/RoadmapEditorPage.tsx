@@ -6,6 +6,9 @@ import { useSearchParams } from 'react-router-dom'
 import RoadmapEditor from '../components/RoadmapEditor'
 // Importa la URL de la API
 import { API_URL } from '../context/AuthContext'
+// Importa toast y Toaster para notificaciones (shadcn)
+import { toast } from 'sonner'
+import { Toaster } from '../components/ui/sonner'
 
 // =============================================
 // PÁGINA DEL EDITOR DE ROADMAP
@@ -46,13 +49,20 @@ export default function RoadmapEditorPage() {
         if (response.ok) {
           const data = await response.json()
           console.log('Roadmap JSON:', data)
+          
+          // Parsear el JSON si viene como string
+          let parsedJson = data.JSON
+          if (typeof data.JSON === 'string') {
+            parsedJson = JSON.parse(data.JSON)
+          }
+          
           setRoadmapData({ 
-            JSON: data.JSON, 
+            JSON: parsedJson, 
             title: data.Titulo_Tema 
           })
           
           // También lo guarda en sessionStorage
-          sessionStorage.setItem(mapId, JSON.stringify(data.JSON))
+          sessionStorage.setItem(mapId, JSON.stringify(parsedJson))
         } else {
           // Si no está en el servidor, intenta de sessionStorage
           const existing = sessionStorage.getItem(mapId)
@@ -112,7 +122,11 @@ export default function RoadmapEditorPage() {
     )
   }
 
-  // Función para guardar el roadmap
+  // =============================================
+  // GUARDAR ROADMAP
+  // =============================================
+
+  // Función para guardar el roadmap en la base de datos con notificaciones toast
   const handleSave = async (data: any) => {
     // Obtiene el token
     const token = localStorage.getItem('token')
@@ -135,21 +149,37 @@ export default function RoadmapEditorPage() {
         })
       })
 
-      // Si es exitoso, muestra mensaje
+      // Si es exitoso, muestra notificación
       if (response.ok) {
-        alert('Roadmap guardado correctamente')
+        toast.success('Roadmap guardado', {
+          description: 'Los cambios se han guardado correctamente',
+        })
       } else {
         // Si hay error, lo muestra
         const error = await response.json()
-        alert('Error al guardar: ' + error.error)
+        toast.error('Error al guardar', {
+          description: error.error,
+        })
       }
     } catch (error) {
       // Maneja errores
       console.error('Error saving roadmap:', error)
-      alert('Error al guardar el roadmap')
+      toast.error('Error al guardar', {
+        description: 'Ha ocurrido un error al guardar el roadmap',
+      })
     }
   }
 
-  // Renderiza el editor de roadmap
-  return <RoadmapEditor initialData={data} readOnly={false} mapId={mapId || undefined} onSave={handleSave} />
+  // =============================================
+  // RENDER
+  // =============================================
+
+  // Renderiza el editor de roadmap con notificaciones
+  // Toaster muestra las notificaciones toast en la esquina superior derecha
+  return (
+    <>
+      <Toaster position="top-right" />
+      <RoadmapEditor initialData={data} readOnly={false} mapId={mapId || undefined} onSave={handleSave} autoLayoutOnMount={true} />
+    </>
+  )
 }

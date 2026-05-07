@@ -1,114 +1,125 @@
 # 📍 PathFinderAI
 
-> **Transforma tus dudas en un plan de estudio estructurado.** > Proyecto Final de Ciclo Formativo de Grado Superior en Desarrollo de Aplicaciones Web (DAW).
+<div align="center">
 
-[![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)](https://vitejs.dev/)
-[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.io/)
-[![Gemini](https://img.shields.io/badge/Gemini_AI-8E75FF?style=for-the-badge&logo=google-gemini&logoColor=white)](https://ai.google.dev/)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![License](https://img.shields.io/badge/license-CC%20BY--SA%203.0-green)
+![Status](https://img.shields.io/badge/status-Activo-success)
+
+**Transforma tus dudas en un plan de estudio estructurado.**
+
+*Proyecto Final de Ciclo Formativo de Grado Superior en Desarrollo de Aplicaciones Web (DAW)*
+
+</div>
 
 ---
 
 ## 🌟 Sobre el Proyecto
 
-**PathFinderAI** es un generador inteligente de rutas de aprendizaje. A diferencia de las hojas de ruta estáticas, esta herramienta utiliza Inteligencia Artificial (**Google Gemini API**) para crear mapas de estudio personalizados y dinámicos basados en la entrada del usuario, visualizándolos mediante grafos interactivos.
+**PathFinderAI** es un generador inteligente de rutas de aprendizaje que utiliza **Inteligencia Artificial** para crear mapas de estudio personalizados. A diferencia de las hojas de ruta estáticas, esta herramienta:
+
+- 🤖 Genera roadmaps automáticamente usando **Google Gemini API**
+- 🕸️ Visualiza el aprendizaje como un grafo interactivo con **React Flow**
+- 📊 Permite seguir el progreso marcando nodos como completados
+- 🔐 Persiste datos en la nube con **Supabase**
 
 ### 🏫 Contexto Académico
-* **Centro**: I.E.S. «Venancio Blanco» (Salamanca)
-* **Ciclo**: Desarrollo de Aplicaciones Web (DAW)
-* **Autor**: [Adrián Gómez Izquierdo](https://github.com/AdriG8)
+
+| | |
+| :--- | :--- |
+| **Centro** | I.E.S. «Venancio Blanco» (Salamanca) |
+| **Ciclo** | Desarrollo de Aplicaciones Web (DAW) |
+| **Autor** | [Adrián Gómez Izquierdo](https://github.com/AdriG8) |
+| **Tutor** | Proyecto de fin de ciclo |
 
 ---
 
-## ✨ Funcionalidades Clave
+## ✨ Funcionalidades
 
-* **🤖 Generación con IA**: Procesamiento de lenguaje natural mediante Gemini API para estructurar temas, subtemas y recursos educativos.
-* **🕸️ Visualización con React Flow**: Renderizado de la ruta como un gráfico interactivo (nodos y enlaces) que facilita la comprensión del camino a seguir.
-* **📊 Seguimiento de Progreso**: Posibilidad de marcar nodos como completados para visualizar el avance académico.
-* **🔐 Persistencia en la Nube**: Sistema de autenticación y guardado de historial de rutas mediante **Supabase** (PostgreSQL).
-* **📱 Interfaz Moderna**: UI limpia y responsivo construida con **Tailwind CSS** y componentes de **Shadcn/UI**.
+<div align="center">
+
+| Función | Descripción |
+| :--- | :--- |
+| 🤖 **Generación con IA** | Crea rutas de aprendizaje personalizadas a partir de cualquier tema |
+| 🕸️ **Grafos Interactivos** | Visualiza el roadmap como nodos conectados |
+| 📊 **Seguimiento de Progreso** | Marca temas como completados, estudiando o pendientes |
+| 📁 **Importar/Exportar** | Guarda y comparte roadmaps en formato JSON |
+| 🔐 **Autenticación** | Sistema de usuarios con Supabase Auth |
+| 📱 **Diseño Responsivo** | Interfaz adaptativa para móvil y escritorio |
+| 🔔 **Notificaciones Toast** | Feedback visual instantáneo |
+| 🌙 **Tema Oscuro** | Diseño moderno con tema oscuro por defecto |
+
+</div>
 
 ---
 
 ## 🛠️ Stack Tecnológico
 
-| Capa | Tecnologías |
+<div align="center">
+
+| Categoría | Tecnologías |
 | :--- | :--- |
-| **Frontend** | React, TypeScript, Vite |
-| **Estilos** | Tailwind CSS, Shadcn/UI, Lucide Icons |
-| **Visualización** | React Flow (Grafos dinámicos) |
-| **BaaS (Backend)** | Supabase (Auth, Database, JSONB storage) |
-| **Inteligencia AI** | Google Gemini API |
+| **Frontend** | React 18 + TypeScript + Vite |
+| **Estilos** | Tailwind CSS + Shadcn/UI + Lucide Icons |
+| **Visualización** | React Flow (grafos dinámicos) |
+| **Backend** | Express.js + Node.js |
+| **Base de Datos** | Supabase (PostgreSQL + Auth) |
+| **Inteligencia Artificial** | Google Gemini API |
+
+</div>
 
 ---
 
-## 🚀 Instalación y Configuración
+## 🚀 Instalación
 
-### Prerequisites
+### Requisitos Previos
 
-* Node.js (v18+)
-* npm o yarn
+- Node.js (v18+)
+- npm o pnpm
+- Cuenta de [Supabase](https://supabase.com)
+- Clave de API de [Google AI Studio](https://makersuite.google.com/app/apikey)
 
-### 1. Clonar el repositorio
+### Clonar el Repositorio
 
 ```bash
 git clone https://github.com/AdriG8/PathFinderAI.git
 cd PathFinderAI
 ```
 
----
-
-## 💻 Despliegue para Desarrollo
-
-El proyecto se compone de dos partes:
-- **Frontend** (puerto 5173): Interfaz de usuario con React + Vite
-- **API** (puerto 3000): Servidor Express con endpoints para IA y datos
-
-### Paso 1: Configurar la API
+### Configurar la API
 
 ```bash
-# Navegar a la carpeta de la API
 cd api
-
-# Instalar dependencias
 npm install
-
-# Copiar el archivo de ejemplo de variables de entorno
 cp .env.example .env
 ```
 
-Edita el archivo `.env` con tus credenciales:
+Edita `.env` con tus credenciales:
 
 ```env
-# Supabase (obténlas desde tu proyecto en supabase.com)
+# Supabase
 VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
 VITE_SUPABASE_ANON_KEY=tu-anon-key
-
-# Clave de la API de Gemini (obténla desde Google AI Studio)
-GEMINI_API_KEY=tu-gemini-api-key
-
-# Clave de servicio de Supabase (para operaciones admin)
 SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
+
+# Google Gemini
+GEMINI_API_KEY=tu-gemini-api-key
 ```
 
-**Iniciar la API:**
+Inicia la API:
 ```bash
 npm run start
-# La API estará disponible en http://localhost:3000
+# API disponible en http://localhost:3000
 ```
 
-### Paso 2: Configurar el Frontend
+### Configurar el Frontend
 
 ```bash
-# Navegar a la carpeta del frontend
 cd ../frontend
-
-# Instalar dependencias
 npm install
 ```
 
-Crea un archivo `.env` en `frontend/` con:
+Crea `.env` en `frontend/`:
 
 ```env
 VITE_API_URL=http://localhost:3000
@@ -116,71 +127,107 @@ VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
 VITE_SUPABASE_ANON_KEY=tu-anon-key
 ```
 
-**Iniciar el Frontend:**
+Inicia el frontend:
 ```bash
 npm run dev
-# La app estará disponible en http://localhost:5173
+# App disponible en http://localhost:5173
 ```
-
-### Paso 3: Verificar que funciona
-
-1. La API debe responder en `http://localhost:3000/api/health` (si está configurado)
-2. El frontend debe cargar en `http://localhost:5173`
-3. Los cambios en código se recargan automáticamente
 
 ---
 
-## 🏗️ Estructura del Proyecto
+## 📁 Estructura del Proyecto
 
 ```
 PathFinderAI/
-├── api/                    # Servidor Express
-│   ├── controllers/        # Controladores de endpoints
-│   ├── index.js            # Punto de entrada
-│   ├── package.json        # Dependencias API
-│   └── .env                # Variables de entorno
+├── 📂 api/                      # Servidor Express
+│   ├── 📂 controllers/         # Lógica de endpoints
+│   │   ├── generateController.js   # Generación con IA
+│   │   ├── roadmapController.js   # CRUD de roadmaps
+│   │   ├── userController.js       # Autenticación
+│   │   └── adminController.js     # Estadísticas admin
+│   ├── index.js                # Punto de entrada
+│   └── package.json
 │
-├── frontend/               # Aplicación React
-│   ├── src/
-│   │   ├── components/     # Componentes React
-│   │   ├── pages/          # Páginas de la app
-│   │   ├── hooks/          # Hooks personalizados
-│   │   ├── context/        # Contextos de React
-│   │   └── utils/          # Utilidades
-│   ├── package.json        # Dependencias Frontend
-│   └── .env                # Variables de entorno
+├── 📂 frontend/                 # Aplicación React
+│   ├── 📂 src/
+│   │   ├── 📂 components/      # Componentes UI
+│   │   │   ├── RoadmapEditor.tsx   # Editor de grafos
+│   │   │   ├── ProfileModal.tsx    # Modal de perfil
+│   │   │   ├── Sidebar.tsx        # Barra lateral
+│   │   │   └── 📂 ui/         # Componentes shadcn
+│   │   │       ├── alert.tsx
+│   │   │       └── sonner.tsx
+│   │   ├── 📂 pages/          # Páginas
+│   │   │   ├── MainPage.tsx       # Dashboard principal
+│   │   │   ├── RoadmapEditorPage.tsx
+│   │   │   └── RoadmapViewerPage.tsx
+│   │   ├── 📂 hooks/          # Hooks personalizados
+│   │   ├── 📂 context/        # Contextos React
+│   │   └── 📂 lib/            # Utilidades
+│   └── package.json
+│
+├── 📂 docs/
+│   ├── API.md                 # Documentación de endpoints
+│   └── ENDPOINTS.md          # Referencia API
 │
 └── README.md
 ```
 
 ---
 
-## 🧠 Estructura de Datos (IA)
+## 🔌 Endpoints Principales
 
-El sistema procesa los prompts del usuario para devolver un esquema JSON compatible con el motor de visualización:
+| Método | Endpoint | Descripción |
+| :--- | :--- | :--- |
+| POST | `/api/register` | Registrar nuevo usuario |
+| POST | `/api/login` | Iniciar sesión |
+| GET | `/api/profile` | Obtener perfil |
+| PUT | `/api/profile` | Actualizar perfil |
+| POST | `/api/generate` | Generar roadmap con IA |
+| POST | `/api/save` | Guardar roadmap |
+| GET | `/api/roadmaps` | Listar roadmaps del usuario |
+| GET | `/api/roadmap/:id` | Obtener roadmap específico |
+| PUT | `/api/roadmaps/:id` | Actualizar roadmap |
+| DELETE | `/api/roadmaps/:id` | Eliminar roadmap |
+| GET | `/api/health` | Estado de la API |
 
-```json
-{
-  "title": "Nombre de la ruta",
-  "nodes": [
-    {
-      "id": "1",
-      "position": { "x": 0, "y": 0 },
-      "data": { "label": "Tema Principal", "status": "pendiente" }
-    }
-  ],
-  "edges": [
-    {
-      "id": "e1-2",
-      "source": "1",
-      "target": "2"
-    }
-  ]
-}
-```
+*Ver documento `docs/API.md` para documentación completa.*
 
 ---
 
-## 📄 Licencia
+## 🤝 Contribuir
 
-Esta obra está bajo una licencia Reconocimiento-Compartir bajo la misma licencia 3.0 España de Creative Commons. Para ver una copia de esta licencia, visite http://creativecommons.org/licenses/by-sa/3.0/es/.
+1. Fork del repositorio
+2. Crear rama (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit de cambios (`git commit -am 'Añadir nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Crear Pull Request
+
+---
+
+## 📝 Licencia
+
+<div align="center">
+
+Esta obra está bajo licencia **Creative Commons Reconocimiento-CompartirIgual 3.0 España**
+
+[![License: CC BY-SA 3.0](https://licensebuttons.net/l/by-sa/3.0/88x31.png)](http://creativecommons.org/licenses/by-sa/3.0/es/)
+
+</div>
+
+---
+
+## 🙏 Agradecimientos
+
+- **I.E.S. Venancio Blanco** por el espacio y recursos
+- **Supabase** por la infraestructura de base de datos
+- **Google** por la API de Gemini
+- **Comunidad open source** por las herramientas utilizadas
+
+---
+
+<div align="center">
+
+⭐️ ¡Dale una estrella al proyecto si te ha sido útil!
+
+</div>
