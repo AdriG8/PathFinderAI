@@ -42,6 +42,7 @@ export interface RoadmapNodeData {
   isEditing?: boolean
   color?: string
   horas?: number
+  notes?: string
   resources?: {
     enlaces?: { nombre: string; url: string }[]
   }

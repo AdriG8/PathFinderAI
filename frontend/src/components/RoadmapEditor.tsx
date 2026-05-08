@@ -1,5 +1,5 @@
 // Importa hooks de React
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import ReactFlow, {
   Background,
   Controls,
@@ -90,8 +90,13 @@ const CustomNode = ({ data, id }: { data: RoadmapNodeData; id: string }) => {
         />
       ) : (
         <div 
-          className="text-sm font-medium"
+          className="text-sm font-medium cursor-text"
           style={{ color: 'var(--color-on-surface)' }}
+          onDoubleClick={(e) => {
+            e.stopPropagation()
+            const event = new CustomEvent('editNodeLabel', { detail: { id } })
+            window.dispatchEvent(event)
+          }}
         >
           {data.label}
         </div>
@@ -129,6 +134,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
   const [showExportModal, setShowExportModal] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null)
+  const colorInputRef = useRef<HTMLInputElement>(null)
 
   // Función para calcular posiciones de nodos usando dagre
   const calculatePositions = (nodes: any[], edges: any[]) => {
@@ -167,6 +173,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
         isEditing: false,
         color: node.data?.color,
         horas: node.data?.horas || 0,
+        notes: node.data?.notes || '',
         resources: node.data?.resources || { enlaces: [] },
       },
     }))
@@ -480,6 +487,26 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
                 {DEFAULT_NODE_COLORS.map((color) => (
                   <button key={color} onClick={() => changeNodeColor(color)} className="w-7 h-7 rounded-full border-2" style={{ backgroundColor: color, borderColor: selectedNodeIds.size === 1 && nodes.find(n => n.id === [...selectedNodeIds][0])?.data.color === color ? 'var(--color-on-surface)' : 'transparent' }} />
                 ))}
+                <div className="relative">
+                  <button
+                    onClick={() => colorInputRef.current?.click()}
+                    className="w-7 h-7 rounded-full border-2"
+                    style={{
+                      background: 'linear-gradient(90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff)',
+                      borderColor: 'transparent',
+                      borderRadius: '9999px',
+                    }}
+                    title="Color personalizado"
+                  />
+                  <input
+                    ref={colorInputRef}
+                    type="color"
+                    onChange={(e) => {
+                      changeNodeColor(e.target.value)
+                    }}
+                    className="absolute w-0 h-0 opacity-0"
+                  />
+                </div>
               </div>
             </>
           )}
@@ -565,72 +592,126 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
       )}
 
       {clickedNode && showPanel && (
-        <div className="absolute top-0 right-0 h-full w-80 z-30 p-4 overflow-y-auto" style={{ backgroundColor: 'var(--color-surface-container-low)', borderLeft: '1px solid var(--color-outline)' }}>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold" style={{ color: 'var(--color-on-surface)' }}>{clickedNode.data.label}</h2>
-            <button onClick={closePanel} className="px-2 py-1 rounded" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}>✕</button>
-          </div>
-
-          <div className="mb-4">
-            <span className="text-xs font-semibold uppercase" style={{ color: 'var(--color-on-surface-variant)' }}>Estado</span>
-            {readOnly ? (
-              <p className="text-sm mt-1" style={{ color: getStatusColor(clickedNode.data.status) }}>{getStatusSymbol(clickedNode.data.status)}</p>
-            ) : (
-              <select value={clickedNode.data.status} onChange={(e) => changeStatus(e.target.value)} className="mt-1 px-2 py-1 rounded text-sm w-full" style={{ backgroundColor: 'var(--color-surface-container-high)', color: getStatusColor(clickedNode.data.status), border: '1px solid var(--color-outline)' }}>
-                <option value="pendiente">○ Pendiente</option>
-                <option value="estudiando">⏳ Estudiando</option>
-                <option value="aprendido">✓ Aprendido</option>
-              </select>
-            )}
-          </div>
-
-          {!readOnly && (
-            <div className="mb-4">
-              <span className="text-xs font-semibold uppercase" style={{ color: 'var(--color-on-surface-variant)' }}>Horas Estimadas</span>
-              <input
-                type="number"
-                min="0"
-                value={clickedNode.data.horas || 0}
-                onChange={(e) => {
-                  const horas = parseInt(e.target.value) || 0
-                  setNodes((nds) => nds.map((n) => n.id === clickedNode.id ? { ...n, data: { ...n.data, horas } } : n))
-                  setClickedNode({ ...clickedNode, data: { ...clickedNode.data, horas } })
-                }}
-                className="mt-1 px-2 py-1 rounded text-sm w-full"
-                style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)', border: '1px solid var(--color-outline)' }}
-              />
+        <div className="absolute top-0 right-0 h-full w-80 z-30 flex flex-col animate-in slide-in-from-right duration-200" style={{ backgroundColor: 'var(--color-surface-container-low)', boxShadow: '-4px 0 20px rgba(0,0,0,0.3)' }}>
+          {/* Header con color del nodo */}
+          <div className="p-4 pb-3" style={{ borderBottom: `3px solid ${clickedNode.data.color || getStatusColor(clickedNode.data.status)}` }}>
+            <div className="flex justify-between items-start gap-2">
+              <h2 className="text-lg font-bold leading-tight" style={{ color: 'var(--color-on-surface)' }}>{clickedNode.data.label}</h2>
+              <button onClick={closePanel} className="p-1.5 rounded-full transition-colors hover:bg-opacity-20" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface-variant)' }}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-          )}
+          </div>
 
-          <div className="mb-4">
-            <h3 className="text-sm font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>Recursos</h3>
-            <ul className="space-y-2">
-              {(clickedNode.data.resources?.enlaces || []).map((enlace, index) => {
-                const safeUrl = sanitizeUrl(enlace.url)
-                if (!safeUrl) return null
-                return (
-                  <li key={index}>
-                    <a href={safeUrl} target="_blank" rel="noopener noreferrer" className="text-sm hover:underline" style={{ color: 'var(--color-primary)' }}>{enlace.nombre}</a>
-                  </li>
-                )
-              })}
-            </ul>
+          {/* Contenido */}
+          <div className="flex-1 p-4 overflow-y-auto space-y-5">
+            {/* Estado */}
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-on-surface-variant)' }}>Estado</label>
+              {readOnly ? (
+                <div className="mt-2 px-3 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: 'var(--color-surface-container-high)', color: getStatusColor(clickedNode.data.status) }}>
+                  {getStatusSymbol(clickedNode.data.status)} {clickedNode.data.status.charAt(0).toUpperCase() + clickedNode.data.status.slice(1)}
+                </div>
+              ) : (
+                <select value={clickedNode.data.status} onChange={(e) => changeStatus(e.target.value)} className="mt-2 px-3 py-2 rounded-lg text-sm w-full font-medium transition-all" style={{ backgroundColor: 'var(--color-surface-container-high)', color: getStatusColor(clickedNode.data.status), border: '1px solid var(--color-outline)' }}>
+                  <option value="pendiente">○ Pendiente</option>
+                  <option value="estudiando">⏳ Estudiando</option>
+                  <option value="aprendido">✓ Aprendido</option>
+                </select>
+              )}
+            </div>
 
             {!readOnly && (
-              <div className="flex flex-col gap-2 mt-4">
-                <input className="px-2 py-1 rounded text-sm" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)', border: '1px solid var(--color-outline)' }} placeholder="Título del recurso" value={newResourceTitle} onChange={(e) => setNewResourceTitle(e.target.value)} />
-                <input className="px-2 py-1 rounded text-sm" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)', border: '1px solid var(--color-outline)' }} placeholder="URL del recurso" value={newResourceUrl} onChange={(e) => setNewResourceUrl(e.target.value)} />
-                <button onClick={addResource} className="px-3 py-1 rounded-full text-sm font-bold" style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>Añadir recurso</button>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-on-surface-variant)' }}>Horas Estimadas</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={clickedNode.data.horas || 0}
+                  onChange={(e) => {
+                    const horas = parseInt(e.target.value) || 0
+                    setNodes((nds) => nds.map((n) => n.id === clickedNode.id ? { ...n, data: { ...n.data, horas } } : n))
+                    setClickedNode({ ...clickedNode, data: { ...clickedNode.data, horas } })
+                  }}
+                  className="mt-2 px-3 py-2 rounded-lg text-sm w-full transition-all"
+                  style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)', border: '1px solid var(--color-outline)' }}
+                />
+              </div>
+            )}
+
+            {/* Recursos */}
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-on-surface-variant)' }}>Recursos</label>
+              <div className="mt-2 space-y-2">
+                {(clickedNode.data.resources?.enlaces || []).length === 0 ? (
+                  <p className="text-sm py-2" style={{ color: 'var(--color-on-surface-variant)' }}>No hay recursos disponibles</p>
+                ) : (
+                  (clickedNode.data.resources?.enlaces || []).map((enlace, index) => {
+                    const safeUrl = sanitizeUrl(enlace.url)
+                    if (!safeUrl) return null
+                    return (
+                      <a 
+                        key={index} 
+                        href={safeUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="block px-3 py-2 rounded-lg text-sm transition-all hover:scale-[1.02]"
+                        style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-primary)' }}
+                      >
+                        <span className="font-medium">{enlace.nombre}</span>
+                        <span className="text-xs opacity-70 ml-1">↗</span>
+                      </a>
+                    )
+                  })
+                )}
+              </div>
+
+              {!readOnly && (
+                <div className="mt-6">
+                  <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-on-surface-variant)' }}>Añadir Recurso</label>
+                  <div className="mt-2 space-y-2">
+                    <input 
+                      className="px-3 py-2 rounded-lg text-sm w-full transition-all" 
+                      style={{ backgroundColor: '#1a1a1a', color: '#ffffff', border: '1px solid #333333' }} 
+                      placeholder="Título del recurso" 
+                      value={newResourceTitle} 
+                      onChange={(e) => setNewResourceTitle(e.target.value)} 
+                    />
+                    <input 
+                      className="px-3 py-2 rounded-lg text-sm w-full transition-all" 
+                      style={{ backgroundColor: '#1a1a1a', color: '#ffffff', border: '1px solid #333333' }} 
+                      placeholder="URL del recurso" 
+                      value={newResourceUrl} 
+                      onChange={(e) => setNewResourceUrl(e.target.value)} 
+                    />
+                    <button onClick={addResource} className="px-4 py-2 rounded-full text-sm font-semibold w-full transition-all hover:opacity-80" style={{ backgroundColor: '#000000', color: '#ffffff', border: '1px solid #333333' }}>
+                      + Añadir recurso
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Notas */}
+            {!readOnly && (
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-on-surface-variant)' }}>Notas</label>
+                <textarea 
+                  className="mt-2 w-full h-32 p-3 rounded-lg text-sm transition-all resize-none" 
+                  style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)', border: '1px solid var(--color-outline)' }} 
+                  placeholder="Añade tus notas personales..."
+                  value={clickedNode.data.notes || ''}
+                  onChange={(e) => {
+                    const notes = e.target.value
+                    setNodes((nds) => nds.map((n) => n.id === clickedNode.id ? { ...n, data: { ...n.data, notes } } : n))
+                    setClickedNode({ ...clickedNode, data: { ...clickedNode.data, notes } })
+                  }}
+                />
               </div>
             )}
           </div>
-
-          {!readOnly && (
-            <div>
-              <h3 className="text-sm font-semibold mb-2" style={{ color: 'var(--color-on-surface)' }}>Notas</h3>
-              <textarea className="w-full h-40 p-2 rounded text-sm" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)', border: '1px solid var(--color-outline)' }} placeholder="Añade tus notas aquí..." />
-            </div>
-          )}
         </div>
       )}
     </div>
