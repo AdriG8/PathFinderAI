@@ -1,0 +1,14 @@
+name: Mirroring a GitLab
+
+on: [push, delete]
+
+jobs:
+  to_gitlab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Push to GitLab
+        run: |
+          git push --mirror https://adrian1_daw2:${{ secrets.GITLAB_PASSWORD }}@gitlab.handmadegames.org/adrian1_daw2/pathfinderai.git
