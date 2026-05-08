@@ -12,8 +12,9 @@ const saveRoadmap = async (req, res) => {
     // Obtiene el cliente de Supabase con privilegios de admin
     const supabaseAdmin = req.supabaseAdmin;
 
-    // Si existe ID, actualiza el roadmap existente
-    if (id) {
+    // Si existe ID y no es un ID de fallback (map_), actualiza el roadmap existente
+    // Los IDs que empiezan por "map_" son de sessionStorage fallback y no existen en la BD
+    if (id && !id.startsWith('map_')) {
       // Parsear el string JSON a objeto
       const parsedJson = typeof json === 'string' ? JSON.parse(json) : json;
       

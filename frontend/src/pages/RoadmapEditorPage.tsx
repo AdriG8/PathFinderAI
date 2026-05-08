@@ -1,7 +1,7 @@
 // Importa hooks de React (useMemo, useEffect, useState)
 import { useMemo, useEffect, useState } from 'react'
 // Importa hook para obtener parámetros de la URL
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 // Importa el componente del editor de roadmap
 import RoadmapEditor from '../components/RoadmapEditor'
 // Importa la URL de la API
@@ -17,9 +17,13 @@ import { Toaster } from '../components/ui/sonner'
 // Componente que carga y muestra el editor de roadmap
 export default function RoadmapEditorPage() {
   // Obtiene los parámetros de la URL
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   // Obtiene el ID del roadmap de los parámetros
-  const mapId = searchParams.get('id')
+  const initialMapId = searchParams.get('id')
+  // Estado para el ID actual (puede cambiar después de guardar)
+  const [currentMapId, setCurrentMapId] = useState(initialMapId)
+  // Navigate para actualizar la URL
+  const navigate = useNavigate()
   // Estado para indicar si está cargando
   const [loading, setLoading] = useState(true)
   // Estado para los datos del roadmap
@@ -30,7 +34,7 @@ export default function RoadmapEditorPage() {
     // Función para obtener el roadmap
     const fetchRoadmap = async () => {
       // Si no hay ID, termina de cargar
-      if (!mapId) {
+      if (!currentMapId) {
         setLoading(false)
         return
       }
@@ -39,7 +43,7 @@ export default function RoadmapEditorPage() {
       const token = localStorage.getItem('token')
       try {
         // Intenta obtener el roadmap del servidor
-        const response = await fetch(`${API_URL}/api/roadmap/${mapId}`, {
+        const response = await fetch(`${API_URL}/api/roadmap/${currentMapId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -62,10 +66,10 @@ export default function RoadmapEditorPage() {
           })
           
           // También lo guarda en sessionStorage
-          sessionStorage.setItem(mapId, JSON.stringify(parsedJson))
+          sessionStorage.setItem(currentMapId, JSON.stringify(parsedJson))
         } else {
           // Si no está en el servidor, intenta de sessionStorage
-          const existing = sessionStorage.getItem(mapId)
+          const existing = sessionStorage.getItem(currentMapId)
           if (existing) {
             setRoadmapData({ JSON: JSON.parse(existing), title: 'Roadmap' })
           }
@@ -74,7 +78,7 @@ export default function RoadmapEditorPage() {
         // Maneja errores
         console.error('Error fetching roadmap:', error)
         // Intenta de sessionStorage como fallback
-        const existing = sessionStorage.getItem(mapId)
+        const existing = sessionStorage.getItem(currentMapId)
         if (existing) {
           setRoadmapData({ JSON: JSON.parse(existing), title: 'Roadmap' })
         }
@@ -86,12 +90,12 @@ export default function RoadmapEditorPage() {
 
     // Ejecuta la función
     fetchRoadmap()
-  }, [mapId])
+  }, [currentMapId])
 
   // Memo para calcular los datos iniciales del editor
   const data = useMemo(() => {
     // Si no hay ID, retorna vacío
-    if (!mapId) {
+    if (!currentMapId) {
       return { nodes: [], edges: [] }
     }
 
@@ -102,16 +106,16 @@ export default function RoadmapEditorPage() {
 
     // Intenta obtener de sessionStorage
     try {
-      const data = sessionStorage.getItem(mapId)
-      if (data) {
-        console.log('Roadmap JSON from sessionStorage:', JSON.parse(data))
-        return JSON.parse(data)
+      const storedData = sessionStorage.getItem(currentMapId)
+      if (storedData) {
+        console.log('Roadmap JSON from sessionStorage:', JSON.parse(storedData))
+        return JSON.parse(storedData)
       }
       return { nodes: [], edges: [] }
     } catch {
       return { nodes: [], edges: [] }
     }
-  }, [mapId, roadmapData])
+  }, [currentMapId, roadmapData])
 
   // Mientras carga, muestra pantalla de carga
   if (loading) {
@@ -132,7 +136,7 @@ export default function RoadmapEditorPage() {
     const token = localStorage.getItem('token')
     // Usa el título del roadmap o uno por defecto
     const title = roadmapData?.title || 'Roadmap sin título'
-    console.log('Saving roadmap:', mapId, title)
+    console.log('Saving roadmap:', currentMapId, title)
     
     try {
       // Envía al servidor
@@ -143,7 +147,7 @@ export default function RoadmapEditorPage() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          id: mapId,
+          id: currentMapId,
           title: title,
           json: data
         })
@@ -151,6 +155,24 @@ export default function RoadmapEditorPage() {
 
       // Si es exitoso, muestra notificación
       if (response.ok) {
+        const savedRoadmap = await response.json()
+        
+        // Si el ID cambió (era un map_ y ahora tiene UUID), actualizar estado y URL
+        if (savedRoadmap?.ID && savedRoadmap.ID !== currentMapId && currentMapId) {
+          // Transferir datos al nuevo ID en sessionStorage
+          const existingData = sessionStorage.getItem(currentMapId)
+          if (existingData) {
+            sessionStorage.setItem(savedRoadmap.ID, existingData)
+            sessionStorage.removeItem(currentMapId)
+          }
+          // Actualizar estado
+          setCurrentMapId(savedRoadmap.ID)
+          // Actualizar URL
+          setSearchParams({ id: savedRoadmap.ID })
+          // Recargar la página con el nuevo ID
+          navigate(`/roadmap-editor?id=${savedRoadmap.ID}`, { replace: true })
+        }
+        
         toast.success('Roadmap guardado', {
           description: 'Los cambios se han guardado correctamente',
         })
@@ -179,7 +201,7 @@ export default function RoadmapEditorPage() {
   return (
     <>
       <Toaster position="top-right" />
-      <RoadmapEditor initialData={data} readOnly={false} mapId={mapId || undefined} onSave={handleSave} autoLayoutOnMount={true} />
+      <RoadmapEditor initialData={data} readOnly={false} mapId={currentMapId || undefined} onSave={handleSave} autoLayoutOnMount={true} />
     </>
   )
 }
