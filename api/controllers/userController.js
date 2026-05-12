@@ -24,7 +24,7 @@ const register = async (req, res) => {
           last_name: lastName,
           full_name: `${firstName} ${lastName}`
         },
-        emailRedirectTo: 'http://localhost:5173/email-confirmed'
+        emailRedirectTo: `${process.env.SITE_URL}/email-confirmed`
       }
     });
 
@@ -201,7 +201,7 @@ const forgotPassword = async (req, res) => {
     }
 
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.SITE_URL || 'http://localhost:5173'}/reset-password`
+      redirectTo: `${process.env.SITE_URL}/reset-password`
     });
 
     if (error) {
