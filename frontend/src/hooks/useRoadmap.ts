@@ -79,7 +79,7 @@ export interface RoadmapData {
 
 /**
  * Opciones para inicializar el hook
- * initialData: datos del roadmap cargados desde外部
+ * initialData: datos del roadmap cargados desde externo
  * readOnly: si true, deshabilita todas las operaciones de edición
  * mapId: identificador para guardar en sessionStorage
  * onSave: callback opcional para guardar en base de datos

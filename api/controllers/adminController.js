@@ -2,31 +2,14 @@
 // CONTROLADORES DE ADMIN
 // =============================================
 
-// Importa el cliente de Supabase para conectar con la base de datos
-const { createClient } = require('@supabase/supabase-js');
+const userModel = require('../models/userModel');
+const roadmapModel = require('../models/roadmapModel');
+const metricModel = require('../models/metricModel');
 
-// Cliente de Supabase con privilegios de administrador
-const supabaseAdmin = createClient(
-  process.env.VITE_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
-
-// =============================================
-// MIDDLEWARE DE VERIFICACIÓN DE ADMIN
-// =============================================
-
-// Verifica que el usuario es admin
 const requireAdmin = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    
-    // Consulta el rol del usuario
-    const { data, error } = await supabaseAdmin
-      .from('Usuarios')
-      .select('Rol')
-      .eq('ID', userId)
-      .single();
+    const { data, error } = await userModel.getUserRol(userId);
     
     if (error) {
       return res.status(400).json({ error: error.message });
@@ -36,66 +19,49 @@ const requireAdmin = async (req, res, next) => {
       return res.status(403).json({ error: 'Acceso denegado. Solo administradores.' });
     }
     
-    // Continúa con el siguiente middleware
     next();
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// =============================================
-// CONTROLADORES DE ADMIN
-// =============================================
-
-// Obtener estadísticas del admin
 const getAdminStats = async (req, res) => {
   try {
-    // Contar usuarios totales
-    const { count: totalUsuarios, error: usuariosError } = await supabaseAdmin
-      .from('Usuarios')
-      .select('*', { count: 'exact', head: true });
+    const { count: totalUsuarios, error: usuariosError } = await userModel.countUsers();
     
     if (usuariosError) {
       return res.status(400).json({ error: usuariosError.message });
     }
     
-    // Contar roadmaps totales
-    const { count: totalRoadmaps, error: roadmapsError } = await supabaseAdmin
-      .from('Roadmap')
-      .select('*', { count: 'exact', head: true });
+    const { count: totalRoadmaps, error: roadmapsError } = await roadmapModel.countRoadmaps();
     
     if (roadmapsError) {
       return res.status(400).json({ error: roadmapsError.message });
     }
     
-    // Obtener registros de usuarios por día (últimos 30 días)
     const hace30Dias = new Date();
     hace30Dias.setDate(hace30Dias.getDate() - 30);
     
-    const { data: usuariosPorDia, error: porDiaError } = await supabaseAdmin
-      .from('Usuarios')
-      .select('ID, created_at')
-      .gte('created_at', hace30Dias.toISOString())
-      .order('created_at', { ascending: true });
+    const { data: users, error: usersError } = await userModel.getUsersInRange(
+      hace30Dias.toISOString(),
+      new Date().toISOString()
+    );
     
-    if (porDiaError) {
-      return res.status(400).json({ error: porDiaError.message });
+    if (usersError) {
+      return res.status(400).json({ error: usersError.message });
     }
     
-    // Procesar datos para el gráfico
     const registrosPorDia = {};
-    usuariosPorDia?.forEach(usuario => {
-      const fecha = new Date(usuario.created_at).toISOString().split('T')[0];
+    users?.forEach(user => {
+      const fecha = new Date(user.created_at).toISOString().split('T')[0];
       registrosPorDia[fecha] = (registrosPorDia[fecha] || 0) + 1;
     });
     
-    // Convertir a array ordenado
     const tendenciaUsuarios = Object.entries(registrosPorDia).map(([fecha, count]) => ({
       fecha,
       count
     })).sort((a, b) => a.fecha.localeCompare(b.fecha));
     
-    // Devolver estadísticas
     res.json({
       totalUsuarios: totalUsuarios || 0,
       totalRoadmaps: totalRoadmaps || 0,
@@ -106,13 +72,50 @@ const getAdminStats = async (req, res) => {
   }
 };
 
-// =============================================
-// EXPORTACIÓN DE MÓDULOS
-// =============================================
+const getAllTopics = async (req, res) => {
+  try {
+    const { data: metricas, error } = await metricModel.getAllMetrics();
+    
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    if (!metricas || metricas.length === 0) {
+      return res.json([]);
+    }
+    
+    const userIds = [...new Set(metricas.map(m => m.ID_Usuario))];
+    const { data: usuarios } = await userModel.getUsersByIds(userIds);
+    
+    const usuariosMap = {};
+    usuarios?.forEach(u => {
+      usuariosMap[u.ID] = u;
+    });
+    
+    const topicsFlat = [];
+    metricas.forEach(metrica => {
+      const usuario = usuariosMap[metrica.ID_Usuario];
+      const nombreCompleto = usuario 
+        ? `${usuario.Nombre || ''} ${usuario.Apellidos || ''}`.trim() || usuario.Email 
+        : 'Desconocido';
+      
+      metrica.Temas_Consultados?.forEach((tema, index) => {
+        topicsFlat.push({
+          id: `${metrica.ID_Usuario}-${index}`,
+          usuario: nombreCompleto,
+          tema: tema
+        });
+      });
+    });
+    
+    res.json(topicsFlat.reverse());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
 module.exports = {
-  // Middleware
   requireAdmin,
-  // Funciones
-  getAdminStats
+  getAdminStats,
+  getAllTopics
 };

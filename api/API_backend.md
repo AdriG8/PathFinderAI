@@ -28,24 +28,7 @@ Verifica que la API está funcionando y el estado de las variables de entorno.
 {
   "status": "ok",
   "message": "API funcionando correctamente",
-  "timestamp": "2024-01-01T12:00:00.000Z",
-  "checks": {
-    "server": "ok",
-    "environment": "ok"
-  }
-}
-```
-
-Si faltan variables de entorno:
-```json
-{
-  "status": "ok",
-  "message": "API funcionando pero faltan variables de entorno",
-  "checks": {
-    "server": "ok",
-    "environment": "warning"
-  },
-  "missingEnvVars": ["GEMINI_API_KEY"]
+  "timestamp": "2024-01-01T12:00:00.000Z"
 }
 ```
 
@@ -60,26 +43,23 @@ Registra un nuevo usuario.
 ```json
 {
   "email": "usuario@email.com",
-  "password": "contraseña123"
+  "password": "contraseña123",
+  "firstName": "Nombre",
+  "lastName": "Apellidos"
 }
 ```
 
-**Respuesta (éxito):**
+**Respuesta:**
 ```json
 {
-  "session": {
-    "access_token": "...",
-    "refresh_token": "...",
-    "expires_in": 3600,
-    "expires_at": 1704067200,
-    "token_type": "bearer",
-    "user": { ... }
-  }
+  "session": { ... },
+  "user": { ... }
 }
 ```
 
-**Respuesta (error):**
+**Errores:**
 ```json
+{ "error": "Faltan datos requeridos" }
 { "error": "User already registered" }
 ```
 
@@ -96,7 +76,33 @@ Inicia sesión con email y contraseña.
 }
 ```
 
-**Respuesta:** Mismo formato que register.
+**Respuesta:**
+```json
+{
+  "session": {
+    "access_token": "...",
+    "refresh_token": "...",
+    "expires_in": 3600,
+    "token_type": "bearer",
+    "user": { ... }
+  },
+  "user": { ... }
+}
+```
+
+---
+
+### POST /api/auth/google
+Inicia sesión con Google OAuth.
+
+**Body:**
+```json
+{
+  "idToken": "google_id_token"
+}
+```
+
+**Respuesta:** Mismo formato que login.
 
 ---
 
@@ -112,7 +118,7 @@ Solicita un email para recuperar la contraseña.
 
 **Respuesta:**
 ```json
-{ "message": "Correo de recuperación enviado" }
+{ "message": "Instructions sent to your email" }
 ```
 
 ---
@@ -124,24 +130,7 @@ Cierra la sesión del usuario.
 
 **Respuesta:**
 ```json
-{ "message": "Sesión cerrada correctamente" }
-```
-
----
-
-### POST /api/forgot-password
-Solicita un email para recuperar la contraseña olvidada.
-
-**Body:**
-```json
-{
-  "email": "usuario@email.com"
-}
-```
-
-**Respuesta:**
-```json
-{ "message": "Correo de recuperación enviado" }
+{ "message": "Sesion cerrada correctamente" }
 ```
 
 ---
@@ -159,6 +148,7 @@ Obtiene los datos del perfil del usuario autenticado.
   "nombre": "Nombre",
   "apellidos": "Apellidos",
   "nivel": "principiante",
+  "rol": "user",
   "email": "usuario@email.com"
 }
 ```
@@ -179,7 +169,7 @@ Actualiza los datos del perfil.
 }
 ```
 
-Opciones de nivel: `principiante`, `medio`, `avanzada`
+Opciones de nivel: `principiante`, `medio`, `avanzado`
 
 **Respuesta:**
 ```json
@@ -203,12 +193,33 @@ Cambia la contraseña del usuario.
 
 **Respuesta:**
 ```json
-{ "message": "Contraseña cambiada correctamente" }
+{ "message": "Contrasena cambiada correctamente" }
 ```
 
 **Errores:**
 ```json
-{ "error": "La contraseña actual es incorrecta" }
+{ "error": "La contrasena actual es incorrecta" }
+```
+
+---
+
+### DELETE /api/delete-account
+Elimina la cuenta del usuario y todos sus datos.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Body:**
+```json
+{
+  "password": "contraseñaActual"
+}
+```
+
+**Nota:** Si el usuario se registró con Google, no requiere contraseña.
+
+**Respuesta:**
+```json
+{ "message": "Cuenta eliminada correctamente" }
 ```
 
 ---
@@ -230,7 +241,7 @@ Genera un roadmap usando IA (Google Gemini).
 **Proceso:**
 1. Obtiene el nivel del usuario desde la base de datos
 2. Envía el prompt a Gemini con instrucciones para crear un roadmap JSON
-3. Devuelve el roadmap con nodos y conexiones
+3. Devuelve el roadmap con nodos, conexiones y recursos (enlaces)
 
 **Respuesta:**
 ```json
@@ -246,8 +257,8 @@ Genera un roadmap usando IA (Google Gemini).
         "horas": 2,
         "resources": {
           "enlaces": [
-            { "nombre": "Doc oficial", "url": "https://react.dev" },
-            { "nombre": "Tutorial", "url": "https://ejemplo.com" }
+            { "titulo": "Documentación oficial", "url": "https://react.dev" },
+            { "titulo": "Tutorial gratuito", "url": "https://freecodecamp.org" }
           ]
         }
       }
@@ -260,20 +271,79 @@ Genera un roadmap usando IA (Google Gemini).
 ```
 
 **Notas:**
-- El roadmap se adapta al nivel del usuario (principiante/medio/avanzada)
-- Aprox. 50 nodos de profundidad
-- Cada nodo incluye `horas` estimadas
-- Cada nodo incluye recursos con enlaces válidos
+- Cada nodo incluye recursos con enlaces reales y funcionales
+- Los enlaces son generados por la IA (no se usa búsqueda externa)
+- Aprox. 10-15 nodos de profundidad
+- Cada nodo incluye `horas` estimadas para completarlo
 
-**Errores específicos:**
+**Errores:**
 ```json
 { "error": "GEMINI_API_KEY no configurada" }
+{ "error": "El tema no es valido para generar un roadmap" }
 ```
+
+---
+
+## Búsqueda de Recursos
+
+### POST /api/search-resources
+Busca recursos externos para un nodo (YouTube + Wikipedia).
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Body:**
 ```json
-{ "error": "El tema no es válido para generar un roadmap" }
+{
+  "query": "React hooks tutorial"
+}
 ```
+
+**Respuesta:**
 ```json
-{ "error": "Servicio no disponible, intente más tarde" }
+{
+  "youtube": [
+    { "title": "Video título", "url": "https://youtube.com/watch?v=..." }
+  ],
+  "wikipedia": [
+    { "title": "Artículo título", "url": "https://wikipedia.org/wiki/..." }
+  ]
+}
+```
+
+---
+
+## Exámenes
+
+### POST /api/exam
+Genera un examen tipo test para validar el aprendizaje de un nodo.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Body:**
+```json
+{
+  "topic": "JavaScript Arrays",
+  "level": "principiante"
+}
+```
+
+**Respuesta:**
+```json
+{
+  "questions": [
+    {
+      "id": "1",
+      "question": "¿Qué es un array en JavaScript?",
+      "options": [
+        { "letter": "A", "text": "Un tipo de dato primitivo" },
+        { "letter": "B", "text": "Una lista ordenada de elementos" },
+        { "letter": "C", "text": "Un objeto especial" },
+        { "letter": "D", "text": "Una función" }
+      ],
+      "explanation": "Los arrays son estructuras de datos que almacenan elementos ordenados."
+    }
+  ]
+}
 ```
 
 ---
@@ -281,7 +351,7 @@ Genera un roadmap usando IA (Google Gemini).
 ## Roadmaps
 
 ### POST /api/save
-Guarda o actualiza un roadmap en la base de datos.
+Guarda un roadmap en la base de datos.
 
 **Headers:** `Authorization: Bearer <token>`
 
@@ -296,14 +366,7 @@ Guarda o actualiza un roadmap en la base de datos.
 }
 ```
 
-Para actualizar un roadmap existente, incluir el `id`:
-```json
-{
-  "id": "uuid-del-roadmap",
-  "title": "Mi Roadmap Actualizado",
-  "json": { ... }
-}
-```
+**Nota:** Al guardar, el tema se añade automáticamente a la tabla Metrica.
 
 **Respuesta:**
 ```json
@@ -356,19 +419,9 @@ Obtiene un roadmap específico por ID.
 }
 ```
 
-**Error (no encontrado):**
+**Error:**
 ```json
-{ "error": "Roadmap no encontrado" }
-```
-
----
-
-### GET /api/roadmap/test
-Endpoint de prueba público (sin autenticación).
-
-**Respuesta:**
-```json
-{ "message": "Roadmap test endpoint working" }
+{ "error": "No se encontró el roadmap" }
 ```
 
 ---
@@ -378,18 +431,16 @@ Actualiza un roadmap existente (ej. cambiar título).
 
 **Headers:** `Authorization: Bearer <token>`
 
-**Parámetros:** `id` - UUID del roadmap
-
 **Body:**
 ```json
 {
-  "Titulo_Tema": "Nuevo título del roadmap"
+  "Titulo_Tema": "Nuevo título"
 }
 ```
 
 **Respuesta:**
 ```json
-{ "message": "Roadmap actualizado correctamente" }
+{ "message": "Roadmap actualizado" }
 ```
 
 ---
@@ -399,11 +450,19 @@ Elimina un roadmap de la base de datos.
 
 **Headers:** `Authorization: Bearer <token>`
 
-**Parámetros:** `id` - UUID del roadmap
+**Respuesta:**
+```json
+{ "message": "Roadmap eliminado" }
+```
+
+---
+
+### GET /api/roadmap/test
+Endpoint de prueba público.
 
 **Respuesta:**
 ```json
-{ "message": "Roadmap eliminado correctamente" }
+{ "message": "Test endpoint works", "tables": ["Roadmap"] }
 ```
 
 ---
@@ -411,7 +470,7 @@ Elimina un roadmap de la base de datos.
 ## Administración
 
 ### GET /api/admin/stats
-Obtiene estadísticas globales de la aplicación (solo admin).
+Obtiene estadísticas globales (solo admin).
 
 **Headers:** `Authorization: Bearer <token>`
 
@@ -420,17 +479,48 @@ Obtiene estadísticas globales de la aplicación (solo admin).
 {
   "totalUsuarios": 150,
   "totalRoadmaps": 320,
-  "roadmapsPorNivel": {
-    "principiante": 100,
-    "medio": 150,
-    "avanzada": 70
-  }
+  "tendenciaUsuarios": [
+    { "fecha": "2024-01-01", "count": 5 },
+    { "fecha": "2024-01-02", "count": 3 }
+  ]
 }
 ```
 
-**Error (sin permisos):**
+**Error:**
 ```json
-{ "error": "Acceso restringido a administradores" }
+{ "error": "Acceso denegado. Solo administradores." }
+```
+
+---
+
+### GET /api/admin/topics
+Obtiene todos los temas consultados (solo admin).
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Respuesta:**
+```json
+[
+  { "id": "user1-0", "usuario": "Juan Pérez", "tema": "React" },
+  { "id": "user1-1", "usuario": "Juan Pérez", "tema": "JavaScript" },
+  { "id": "user2-0", "usuario": "María García", "tema": "Python" }
+]
+```
+
+---
+
+## Métricas de Usuario
+
+### GET /api/metrics/temas
+Obtiene los temas consultados del usuario actual.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Respuesta:**
+```json
+{
+  "temas": ["React", "JavaScript", "TypeScript"]
+}
 ```
 
 ---
@@ -451,13 +541,13 @@ Obtiene estadísticas globales de la aplicación (solo admin).
 ## Códigos de Error Comunes
 
 ```json
-{ "error": "User already registered" }
-{ "error": "Invalid login credentials" }
-{ "error": "Token expired" }
-{ "error": "Roadmap no encontrado" }
+{ "error": "Faltan datos requeridos" }
+{ "error": "Token no proporcionado" }
+{ "error": "Token invalido o expirado" }
+{ "error": "La contrasena es incorrecta" }
 { "error": "GEMINI_API_KEY no configurada" }
-{ "error": "El tema no es válido para generar un roadmap" }
-{ "error": "Acceso restringido a administradores" }
+{ "error": "El tema no es valido para generar un roadmap" }
+{ "error": "Acceso denegado. Solo administradores." }
 ```
 
 ---
@@ -466,41 +556,40 @@ Obtiene estadísticas globales de la aplicación (solo admin).
 
 ```env
 # Supabase
-VITE_SUPABASE_URL=https://xxxxx.supabase.co
-VITE_SUPABASE_ANON_KEY=tu_anon_key
-SUPABASE_SERVICE_ROLE_KEY=tu_service_key
+VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+VITE_SUPABASE_ANON_KEY=tu-anon-key
+SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
 
-# Gemini IA
-GEMINI_API_KEY=tu_api_key
+# Google Gemini
+GEMINI_API_KEY=tu-gemini-api-key
+
+# Sitio
+SITE_URL=http://localhost:5173
+
+# OAuth Google (frontend)
+VITE_GOOGLE_CLIENT_ID=tu-client-id.apps.googleusercontent.com
 ```
 
 ---
 
-## Uso con Frontend
+## Estructura de Base de Datos
 
-### Fetch ejemplo (JavaScript)
-```javascript
-const response = await fetch(`${API_URL}/api/roadmaps`, {
-  headers: {
-    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    'Content-Type': 'application/json'
-  }
-})
-const data = await response.json()
-```
+### Tablas
 
-### Fetch ejemplo (with Axios)
-```javascript
-const config = {
-  headers: { Authorization: `Bearer ${token}` }
-}
-const response = await axios.get(`${API_URL}/api/profile`, config)
-```
+- **Usuarios**: Perfiles de usuario (ID, Nombre, Apellidos, Email, Nivel, Rol)
+- **Roadmap**: Roadmaps guardados (ID, ID_Usuario, Titulo_Tema, JSON, Fecha_Creacion)
+- **Metrica**: Temas consultados por usuario (ID, ID_Usuario, Temas_Consultados[])
+
+### Funciones SQL
+
+- `agregar_tema_consultado(p_id_usuario, p_tema)`: Añade un tema al array de un usuario
+- `obtener_temas_consultados(p_id_usuario)`: Obtiene los temas de un usuario
 
 ---
 
 ## Notas
 
-- Todos los endpoints de usuario requieren autenticación excepto: `/api/health`, `/api/register`, `/api/login`, `/api/forgot-password`, `/api/roadmap/test`
-- El endpoint de eliminación de cuenta (`DELETE /api/delete-account`) está deshabilitado temporalmente
-- La generación de roadmaps usa el modelo `gemini-flash-latest` de Google Gemini
+- Todos los endpoints requieren autenticación excepto: `/health`, `/register`, `/login`, `/forgot-password`, `/auth/google`, `/roadmap/test`
+- La generación de roadmaps usa `gemini-2.5-flash` de Google Gemini
+- Los recursos (enlaces) se generan junto con el roadmap (no se buscan externamente)
+- Los roadmaps se guardan automáticamente al generar y añadir a Metrica

@@ -2,7 +2,7 @@
 // CONTROLADORES DE GENERACIÓN DE ROADMAP
 // =============================================
 
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenAI } = require('@google/genai');
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseAdmin = createClient(
@@ -10,6 +10,10 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY,
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
+
+// =============================================
+// CONTROLADOR: Generar estructura del roadmap
+// =============================================
 
 const generateRoadmap = async (req, res) => {
   try {
@@ -22,10 +26,7 @@ const generateRoadmap = async (req, res) => {
       return res.status(500).json({ error: 'GEMINI_API_KEY no configurada' });
     }
 
-    const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-flash-lite-latest',
-    });
+    const ai = new GoogleGenAI({ apiKey: geminiApiKey });
 
     const userId = req.user.id;
     const { data: userData } = await supabaseAdmin
@@ -37,12 +38,12 @@ const generateRoadmap = async (req, res) => {
     const nivelUsuario = userData?.Nivel || 'principiante';
 
     // ========================================
-    // Generar roadmap completo en UNA petición
+    // Generar estructura del roadmap
     // ========================================
-    console.log('📋 Generando roadmap...');
+    console.log('📋 Generando estructura del roadmap...');
 
     const generationPrompt = `Genera una ruta de aprendizaje en formato JSON para React Flow.
-La respuesta debe ser solo JSON válido, sin texto adicional.
+La respuesta debe ser solo JSON valido, sin texto adicional.
 Estructura requerida:
 {
   "nodes": [
@@ -54,9 +55,12 @@ Estructura requerida:
         "status": "pendiente",
         "isEditing": false,
         "horas": 2,
-        "resources": { "enlaces": [
-          { "nombre": "Nombre del recurso", "url": "https://ejemplo.com" }
-        ] }
+        "resources": {
+          "enlaces": [
+            { "titulo": "Nombre del recurso", "url": "https://ejemplo.com/recurso" },
+            { "titulo": "Otro recurso", "url": "https://ejemplo.com/otro" }
+          ]
+        }
       }
     }
   ],
@@ -64,30 +68,35 @@ Estructura requerida:
     { "id": "e1-2", "source": "1", "target": "2" }
   ]
 }
-- type puede SOLO PUEDE ser: "custom"
+REGLAS:
+- type solo puede ser: "custom"
 - status valores: "pendiente", "estudiando", "aprendido"
-- horas: tiempo estimado en horas para completar ese nodo/tema
-- resources.enlaces: array con recursos para aprender este tema. Cada recurso debe tener "nombre" y "url". Incluye fuentes como: Documentación oficial, Artículos, Cursos, Vídeos de YT, Libros, Tutoriales. Mínimo 2-3 recursos por nodo.
-- LOS ENLACES DEBEN SER REALES Y TENER SENTIDO CON EL TEMA DE SU NODO
-- Comprueba con google que los enlaces siguen activos y existen
-- Cada nodo debe tener su propio id único
+- horas: tiempo estimado en horas para completar ese nodo
+- resources.enlaces: array de objetos con "titulo" (nombre del recurso) y "url" (enlace real y funcional a documentos, videos, tutoriales o articulos utiles)
+- Cada nodo debe tener al menos 2-3 enlaces reales y funcionales (urls reales de recursos educativos como MDN, freeCodeCamp, YouTube, Coursera, documentación oficial, etc.)
+- Los enlaces deben ser reales y verificables, no inventados
+- Cada nodo debe tener su propio id unico
 - Cada arista tiene id, source y target
 - El NIVEL DEL USUARIO es: ${nivelUsuario} (principiante/medio/avanzada)
-- Adapta la complejidad y profundidad del roadmap al nivel del usuario
-- El roadmap debe tener esta estructura: 50 nodos o mas para un tema extenso, 20 nodos o menos para temas cortos.
-- Incluye subtemas, conceptos específicos, y detalles relevantes para cada tema
-- Estructura tipo árbol con ramas principales y secundarias
-- El mapa debe de tener un nodo principal donde se ramifican los demás temas
+- Adapta la complejidad al nivel del usuario
+- Roadmap de 10-15 nodos aproximadamente
+- Incluye subtemas, conceptos especificos y detalles relevantes
+- Estructura tipo arbol con ramas principales y secundarias
+- Nodo principal donde se ramifican los demas temas
 TEMA: ${prompt}
-RESPONDE SOLO CON JSON VÁLIDO, SIN TEXTO EXTRA NI MARKDOWN. SI EL TEMA NO TIENE SENTIDO RESPONDE SOLO CON: TEMA NO VALIDO.`;
+RESPONDE SOLO CON JSON VALIDO, SIN TEXTO EXTRA. SI EL TEMA NO TIENE SENTIDO RESPONDE SOLO CON: TEMA NO VALIDO.`;
 
-    const result = await model.generateContent(generationPrompt);
-    const generatedText = result.response.text();
+    const result = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: generationPrompt,
+    });
 
-    // Verificar si el tema no es válido
+    const generatedText = result.text;
+
+    // Verificar si el tema no es valido
     if (generatedText.trim() === 'TEMA NO VALIDO') {
-      console.log('Tema no válido:', prompt);
-      return res.status(400).json({ error: 'El tema no es válido para generar un roadmap' });
+      console.log('Tema no valido:', prompt);
+      return res.status(400).json({ error: 'El tema no es valido para generar un roadmap' });
     }
 
     const jsonMatch = generatedText.match(/\{[\s\S]*\}/);

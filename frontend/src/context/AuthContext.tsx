@@ -91,6 +91,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('token')
     // Elimina los datos del usuario
     localStorage.removeItem('user')
+    // Elimina el rol del usuario
+    localStorage.removeItem('userRole')
     // Loguea el establecimiento de user a null
     console.log('AuthContext: Estableciendo user a null')
     // Establece el usuario a null

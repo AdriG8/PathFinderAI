@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Save, Lock, AlertCircle, Check } from 'lucide-react'
+import { Save, Lock, AlertCircle, Check } from 'lucide-react'
 import { toast } from 'sonner'
 
 // =============================================
@@ -31,7 +31,7 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
   
   // Estados de UI
   const [loading, setLoading] = useState(false)
-  // const [loadingDelete, setLoadingDelete] = useState(false)
+  const [loadingDelete, setLoadingDelete] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -221,51 +221,55 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
   }
 
   // Eliminar cuenta
-  // const handleDeleteAccount = async () => {
-  //   const confirmed = window.confirm('¿Estás seguro de que quieres eliminar tu cuenta? Esta acción es irreversible.')
-  //   if (!confirmed) return
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm('¿Estás seguro de que quieres eliminar tu cuenta? Esta acción es irreversible.')
+    if (!confirmed) return
 
-  //   setLoadingDelete(true)
-  //   setMessage(null)
+    setLoadingDelete(true)
+    setMessage(null)
 
-  //   if (!currentPassword) {
-  //     setMessage({ type: 'error', text: 'Introduce tu contraseña para confirmar' })
-  //     setLoadingDelete(false)
-  //     return
-  //   }
+    // Verificar si es usuario de Google
+    const isGoogleUser = user?.app_metadata?.providers?.includes('google')
 
-  //   try {
-  //     const token = localStorage.getItem('token')
-  //     const response = await fetch(`${API_URL}/api/delete-account`, {
-  //       method: 'DELETE',
-  //       headers: {
-  //         'Authorization': `Bearer ${token}`,
-  //         'Content-Type': 'application/json'
-  //       },
-  //       body: JSON.stringify({
-  //         password: currentPassword
-  //       })
-  //     })
+    // Si no es usuario de Google, requiere contraseña
+    if (!isGoogleUser && !currentPassword) {
+      setMessage({ type: 'error', text: 'Introduce tu contraseña para confirmar' })
+      setLoadingDelete(false)
+      return
+    }
 
-  //     const data = await response.json()
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${API_URL}/api/delete-account`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          password: isGoogleUser ? undefined : currentPassword
+        })
+      })
 
-  //     if (!response.ok) {
-  //       setMessage({ type: 'error', text: data.error })
-  //       return
-  //     }
+      const data = await response.json()
 
-  //     setMessage({ type: 'success', text: 'Cuenta eliminada correctamente' })
-      
-  //     setTimeout(() => {
-  //       localStorage.removeItem('token')
-  //       window.location.href = '/'
-  //     }, 1500)
-  //   } catch (error: any) {
-  //     setMessage({ type: 'error', text: error.message })
-  //   } finally {
-  //     setLoadingDelete(false)
-  //   }
-  // }
+      if (!response.ok) {
+        setMessage({ type: 'error', text: data.error })
+        return
+      }
+
+      setMessage({ type: 'success', text: 'Cuenta eliminada correctamente' })
+
+      setTimeout(() => {
+        localStorage.removeItem('token')
+        window.location.href = '/'
+      }, 1500)
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message })
+    } finally {
+      setLoadingDelete(false)
+    }
+  }
 
   // Si no está abierto, no renderizar
   if (!isOpen) return null
@@ -288,13 +292,6 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
           <h2 className="text-xl font-bold" style={{ color: 'var(--color-on-surface)' }}>
             Mi Perfil
           </h2>
-          <button 
-            onClick={onClose}
-            className="p-2 rounded-full transition-colors hover:opacity-80"
-            style={{ backgroundColor: 'var(--color-surface-container-high)' }}
-          >
-            <X className="w-5 h-5" style={{ color: 'var(--color-on-surface)' }} />
-          </button>
         </div>
         
         {/* Tabs */}
@@ -574,35 +571,42 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
                 </div>
               </div>
 
-              <div>
-                <label 
-                  className="block text-xs ml-1 uppercase tracking-wider mb-2"
-                  style={{ color: 'var(--color-on-surface-variant)' }}
-                >
-                  Confirma tu contraseña
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                  style={{ 
-                    backgroundColor: 'var(--color-surface-container-high)',
-                    color: 'var(--color-on-surface)'
-                  }}
-                  disabled
-                />
-              </div>
+              {user?.app_metadata?.providers?.includes('google') ? (
+                <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--color-surface-container-high)' }}>
+                  <p className="text-sm" style={{ color: 'var(--color-on-surface)' }}>
+                    Tu cuenta fue creada con Google. No necesitas contraseña para eliminarla.
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <label 
+                    className="block text-xs ml-1 uppercase tracking-wider mb-2"
+                    style={{ color: 'var(--color-on-surface-variant)' }}
+                  >
+                    Confirma tu contraseña
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                    style={{ 
+                      backgroundColor: 'var(--color-surface-container-high)',
+                      color: 'var(--color-on-surface)'
+                    }}
+                  />
+                </div>
+              )}
 
               <button
-                // onClick={handleDeleteAccount}
-                disabled={true}
-                className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-opacity opacity-50 cursor-not-allowed"
+                onClick={handleDeleteAccount}
+                disabled={loadingDelete}
+                className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-all hover:opacity-90"
                 style={{ backgroundColor: '#ef4444', color: 'white' }}
               >
                 <AlertCircle className="w-5 h-5" />
-                Eliminar mi cuenta (Deshabilitado)
+                {loadingDelete ? 'Eliminando...' : 'Eliminar mi cuenta'}
               </button>
             </div>
           )}

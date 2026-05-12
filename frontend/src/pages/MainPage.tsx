@@ -1,11 +1,11 @@
 // Importa el componente Link para navegación
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 // Importa hooks de React (useState, useRef, useEffect)
 import { useState, useRef, useEffect } from 'react'
 // Importa el contexto de autenticación y la URL de la API
 import { useAuth, API_URL } from '../context/AuthContext'
 // Importa iconos de Lucide
-import { Plus, Map, FolderOpen, Upload, LogOut, Send, User, MoreVertical, Edit, Trash2 } from 'lucide-react'
+import { Plus, Map, FolderOpen, Upload, LogOut, Send, User, MoreVertical, Edit, Trash2, Settings } from 'lucide-react'
 // Importa utilidades de sanitización
 import { sanitizeFileName } from '../utils/sanitize'
 // Importa el modal de perfil
@@ -39,8 +39,12 @@ interface Roadmap {
 
 // Componente principal de la aplicación (dashboard)
 export default function MainPage() {
+  // Hook para navegación
+  const navigate = useNavigate()
   // Obtiene el usuario, estado de carga y función de cerrar sesión del contexto
   const { user, loading, signOut } = useAuth()
+  // Estado para el rol del usuario (usuario/admin)
+  const [userRole, setUserRole] = useState<string>('user')
   // Estado para abrir/cerrar la barra lateral
   const [sidebarOpen, setSidebarOpen] = useState(false)
   // Estado para los mapas importados localmente
@@ -69,23 +73,29 @@ export default function MainPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   
 
-  // Efecto para obtener los roadmaps del usuario
+  // Efecto para obtener los roadmaps del usuario y el rol
   useEffect(() => {
-    // Función para obtener los roadmaps
+    // Cargar rol desde localStorage inmediatamente
+    const savedRole = localStorage.getItem('userRole')
+    if (savedRole) {
+      setUserRole(savedRole)
+    }
+
+    // Funcion para obtener los roadmaps
     const fetchRoadmaps = async () => {
       // Solo si hay usuario autenticado
       if (user) {
         // Obtiene el token
         const token = localStorage.getItem('token')
         try {
-          // Hace la petición al servidor
+          // Hace la peticion al servidor
           const response = await fetch(`${API_URL}/api/roadmaps`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
           })
           
-          // Si el token ha expirado, cerrar sesión
+          // Si el token ha expirado, cerrar sesion
           if (response.status === 401) {
             localStorage.removeItem('token')
             localStorage.removeItem('user')
@@ -105,8 +115,30 @@ export default function MainPage() {
       }
     }
 
-    // Ejecuta la función
+    // Funcion para obtener el rol del usuario
+    const fetchUserRole = async () => {
+      if (!user) return
+      
+      const token = localStorage.getItem('token')
+      try {
+        const response = await fetch(`${API_URL}/api/profile`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          setUserRole(data.rol || 'usuario')
+        }
+      } catch (error) {
+        console.error('Error fetching user role:', error)
+      }
+    }
+
+    // Ejecuta las funciones
     fetchRoadmaps()
+    fetchUserRole()
   }, [user])
 
   // Función para importar un archivo JSON
@@ -726,6 +758,17 @@ export default function MainPage() {
                       <Upload className="w-5 h-5" />
                       Importar JSON
                     </button>
+                    {/* Opción de Admin (solo para admins) */}
+                    {userRole === 'admin' && (
+                      <button 
+                        onClick={() => { setUserMenuOpen(false); navigate('/admin') }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:opacity-80"
+                        style={{ color: 'var(--color-on-surface)' }}
+                      >
+                        <Settings className="w-5 h-5" />
+                        Admin
+                      </button>
+                    )}
                     {/* Opción de cerrar sesión */}
                     <button 
                       onClick={handleSignOut}

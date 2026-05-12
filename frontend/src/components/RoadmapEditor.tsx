@@ -21,10 +21,14 @@ import 'reactflow/dist/style.css'
 import { sanitizeUrl } from '../utils/sanitize'
 // Importa utilidades del hook
 import { getStatusColor, DEFAULT_NODE_COLORS, type RoadmapNodeData, calculateRoadmapStats } from '../hooks/useRoadmap'
+// Importa modal de examen
+import ExamModal from './ExamModal'
 
 // =============================================
-// INTERFACES
+// CONSTANTES
 // =============================================
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 // =============================================
 // INTERFAZ DE PROPS DEL EDITOR
@@ -135,6 +139,9 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
   const [isExporting, setIsExporting] = useState(false)
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null)
   const colorInputRef = useRef<HTMLInputElement>(null)
+  const [showExamModal, setShowExamModal] = useState(false)
+  const [examNodeId, setExamNodeId] = useState<string | null>(null)
+  const [isSearching, setIsSearching] = useState(false)
 
   // Función para calcular posiciones de nodos usando dagre
   const calculatePositions = (nodes: any[], edges: any[]) => {
@@ -270,9 +277,23 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
   // Cambiar estado
   const changeStatus = useCallback((status: string) => {
     if (!clickedNode) return
+    if (status === 'aprendido') {
+      setExamNodeId(clickedNode.id)
+      setShowExamModal(true)
+      return
+    }
     setNodes((nds) => nds.map((node) => node.id === clickedNode.id ? { ...node, data: { ...node.data, status } } : node))
     setClickedNode((prev) => prev ? { ...prev, data: { ...prev.data, status } } : null)
   }, [clickedNode, setNodes])
+
+  // Marcar nodo como completado tras aprobar examen
+  const handleExamPass = useCallback(() => {
+    if (!examNodeId) return
+    setNodes((nds) => nds.map((node) => node.id === examNodeId ? { ...node, data: { ...node.data, status: 'aprendido' } } : node))
+    setClickedNode((prev) => prev && prev.id === examNodeId ? { ...prev, data: { ...prev.data, status: 'aprendido' } } : null)
+    setShowExamModal(false)
+    setExamNodeId(null)
+  }, [examNodeId, setNodes])
 
   // Cambiar color
   const changeNodeColor = useCallback((color: string) => {
@@ -291,27 +312,73 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
     setEdges((eds) => [...eds, newEdge])
   }, [setEdges])
 
-  // Auto layout
+  // ============================================
+  // FUNCION: Auto layout con Dagre
+  // Organiza los nodos automaticamente en forma de grafo
+  // ============================================
   const autoLayout = useCallback(() => {
+    // Crea el grafo de Dagre
     const dagreGraph = new dagre.graphlib.Graph()
     dagreGraph.setDefaultEdgeLabel(() => ({}))
     dagreGraph.setGraph({ rankdir: layoutDirection })
     
+    // Establece las dimensiones de los nodos
     const nodeWidth = 200
     const nodeHeight = 120
     
+    // Añade los nodos y aristas al grafo
     nodes.forEach((node) => dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight }))
     edges.forEach((edge) => dagreGraph.setEdge(edge.source, edge.target))
     
+    // Calcula el layout
     dagre.layout(dagreGraph)
     
+    // Actualiza las posiciones de los nodos
     const layoutedNodes = nodes.map((node) => {
       const nodeWithPosition = dagreGraph.node(node.id)
       return { ...node, position: { x: nodeWithPosition.x - nodeWidth / 2, y: nodeWithPosition.y - nodeHeight / 2 } }
     })
     
+    // Actualiza el estado con los nodos recolocados
     setNodes(layoutedNodes)
   }, [nodes, edges, layoutDirection, setNodes])
+
+  // ============================================
+  // FUNCION: Buscar recursos con Wikipedia + YouTube
+  // Llama al endpoint de busqueda y añade los enlaces encontrados
+  // ============================================
+  const handleSearchResources = useCallback(async () => {
+    // Verifica que hay un nodo seleccionado
+    if (!clickedNode) return
+    setIsSearching(true)
+    try {
+      // Obtiene el token de autenticacion
+      const token = localStorage.getItem('token')
+      // Realiza la peticion al endpoint de busqueda
+      const response = await fetch(`${API_URL}/api/search-resources`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ topic: clickedNode.data.label }),
+      })
+      // Procesa la respuesta
+      const data = await response.json()
+      if (data.results && data.results.length > 0) {
+        // Transforma los resultados al formato de enlaces
+        const newEnlaces = data.results.map((r: any) => ({ nombre: r.title, url: r.url }))
+        const currentEnlaces = clickedNode.data.resources?.enlaces || []
+        // Actualiza los nodos y el nodo seleccionado
+        setNodes((nds) => nds.map((n) => n.id === clickedNode.id ? { ...n, data: { ...n.data, resources: { enlaces: [...currentEnlaces, ...newEnlaces] } } } : n))
+        setClickedNode((prev) => prev ? { ...prev, data: { ...prev.data, resources: { enlaces: [...currentEnlaces, ...newEnlaces] } } } : null)
+      }
+    } catch (error) {
+      console.error('Error buscando recursos:', error)
+    } finally {
+      setIsSearching(false)
+    }
+  }, [clickedNode, setNodes])
 
   // Eliminar nodos seleccionados
   const deleteSelectedNodes = useCallback(() => {
@@ -643,7 +710,31 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
 
             {/* Recursos */}
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-on-surface-variant)' }}>Recursos</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-on-surface-variant)' }}>Recursos</label>
+                {!readOnly && (
+                  <button
+                    onClick={handleSearchResources}
+                    disabled={isSearching || !clickedNode}
+                    className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:opacity-80 flex items-center gap-1.5"
+                    style={{ backgroundColor: '#e15b00', color: 'white' }}
+                  >
+                    {isSearching ? (
+                      <>
+                        <span className="animate-spin inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full" />
+                        Buscando...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        Wiki+YT
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
               <div className="mt-2 space-y-2">
                 {(clickedNode.data.resources?.enlaces || []).length === 0 ? (
                   <p className="text-sm py-2" style={{ color: 'var(--color-on-surface-variant)' }}>No hay recursos disponibles</p>
@@ -713,6 +804,15 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
             )}
           </div>
         </div>
+      )}
+
+      {showExamModal && examNodeId && (
+        <ExamModal
+          isOpen={showExamModal}
+          onClose={() => { setShowExamModal(false); setExamNodeId(null) }}
+          topic={nodes.find(n => n.id === examNodeId)?.data.label || ''}
+          onPass={handleExamPass}
+        />
       )}
     </div>
   )

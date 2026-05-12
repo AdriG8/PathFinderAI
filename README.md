@@ -20,7 +20,8 @@
 
 - 🤖 Genera roadmaps automáticamente usando **Google Gemini API**
 - 🕸️ Visualiza el aprendizaje como un grafo interactivo con **React Flow**
-- 📊 Permite seguir el progreso marcando nodos como completados
+- 📊 Permite seguir el progreso con exámenes tipo test
+- 📚 Busca recursos automáticamente en **Wikipedia** y **YouTube**
 - 🔐 Persiste datos en la nube con **Supabase**
 
 ### 🏫 Contexto Académico
@@ -41,12 +42,13 @@
 | Función | Descripción |
 | :--- | :--- |
 | 🤖 **Generación con IA** | Crea rutas de aprendizaje personalizadas a partir de cualquier tema |
+| 📝 **Exámenes de Validación** | Examen tipo test de 3 preguntas para marcar nodos como completados |
+| 🔍 **Búsqueda de Recursos** | Busca automáticamente enlaces en Wikipedia y YouTube |
 | 🕸️ **Grafos Interactivos** | Visualiza el roadmap como nodos conectados |
 | 📊 **Seguimiento de Progreso** | Marca temas como completados, estudiando o pendientes |
-| 📁 **Importar/Exportar** | Guarda y comparte roadmaps en formato JSON |
+| 📁 **Importar/Exportar** | Guarda y comparte roadmaps en formato JSON e imagen |
 | 🔐 **Autenticación** | Sistema de usuarios con Supabase Auth |
 | 📱 **Diseño Responsivo** | Interfaz adaptativa para móvil y escritorio |
-| 🔔 **Notificaciones Toast** | Feedback visual instantáneo |
 | 🌙 **Tema Oscuro** | Diseño moderno con tema oscuro por defecto |
 
 </div>
@@ -61,7 +63,7 @@
 | :--- | :--- |
 | **Frontend** | React 18 + TypeScript + Vite |
 | **Estilos** | Tailwind CSS + Shadcn/UI + Lucide Icons |
-| **Visualización** | React Flow (grafos dinámicos) |
+| **Visualización** | React Flow (grafos dinámicos) + Dagre (layout automático) |
 | **Backend** | Express.js + Node.js |
 | **Base de Datos** | Supabase (PostgreSQL + Auth) |
 | **Inteligencia Artificial** | Google Gemini API |
@@ -77,6 +79,7 @@
 - Node.js (v18+)
 - npm o pnpm
 - Cuenta de [Supabase](https://supabase.com)
+- Cuenta de [Google Cloud](https://console.cloud.google.com/) (para OAuth)
 - Clave de API de [Google AI Studio](https://makersuite.google.com/app/apikey)
 
 ### Clonar el Repositorio
@@ -104,11 +107,14 @@ SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
 
 # Google Gemini
 GEMINI_API_KEY=tu-gemini-api-key
+
+# Sitio
+SITE_URL=http://localhost:5173
 ```
 
 Inicia la API:
 ```bash
-npm run start
+npm run dev
 # API disponible en http://localhost:3000
 ```
 
@@ -125,6 +131,7 @@ Crea `.env` en `frontend/`:
 VITE_API_URL=http://localhost:3000
 VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
 VITE_SUPABASE_ANON_KEY=tu-anon-key
+VITE_GOOGLE_CLIENT_ID=tu-google-client-id.apps.googleusercontent.com
 ```
 
 Inicia el frontend:
@@ -132,6 +139,32 @@ Inicia el frontend:
 npm run dev
 # App disponible en http://localhost:5173
 ```
+
+### Configurar Google OAuth
+
+1. Ve a [Google Cloud Console](https://console.cloud.google.com/)
+2. Crea un nuevo proyecto o usa uno existente
+3. Ve a **APIs y servicios** > **Credenciales**
+4. Crea credenciales de **ID de cliente OAuth 2.0** (tipo: Aplicacion web)
+5. Añade estos URIs autorizados:
+   - `http://localhost:5173`
+   - `http://localhost:5173/`
+6. Habilita el provider **Google** en [Supabase Dashboard](https://supabase.com/dashboard)
+   - Ve a **Authentication** > **Providers** > **Google**
+   - Introduce tu **Client ID** y **Client Secret**
+
+### Configurar la Base de Datos
+
+Ejecuta el script SQL en el SQL Editor de Supabase:
+
+```bash
+# Archivo: Script_SQL_PathFinderAI.sql
+```
+
+Este script crea las tablas necesarias:
+- `Usuarios` - Perfiles de usuario
+- `Roadmap` - Roadmaps guardados
+- `Metrica` - Estadísticas de uso
 
 ---
 
@@ -142,6 +175,8 @@ PathFinderAI/
 ├── 📂 api/                      # Servidor Express
 │   ├── 📂 controllers/         # Lógica de endpoints
 │   │   ├── generateController.js   # Generación con IA
+│   │   ├── examController.js       # Generación de exámenes
+│   │   ├── simpleSearchController.js  # Búsqueda Wikipedia + YouTube
 │   │   ├── roadmapController.js   # CRUD de roadmaps
 │   │   ├── userController.js       # Autenticación
 │   │   └── adminController.js     # Estadísticas admin
@@ -152,15 +187,11 @@ PathFinderAI/
 │   ├── 📂 src/
 │   │   ├── 📂 components/      # Componentes UI
 │   │   │   ├── RoadmapEditor.tsx   # Editor de grafos
+│   │   │   ├── ExamModal.tsx      # Modal de examen
 │   │   │   ├── ProfileModal.tsx    # Modal de perfil
 │   │   │   ├── Sidebar.tsx        # Barra lateral
 │   │   │   └── 📂 ui/         # Componentes shadcn
-│   │   │       ├── alert.tsx
-│   │   │       └── sonner.tsx
 │   │   ├── 📂 pages/          # Páginas
-│   │   │   ├── MainPage.tsx       # Dashboard principal
-│   │   │   ├── RoadmapEditorPage.tsx
-│   │   │   └── RoadmapViewerPage.tsx
 │   │   ├── 📂 hooks/          # Hooks personalizados
 │   │   ├── 📂 context/        # Contextos React
 │   │   └── 📂 lib/            # Utilidades
@@ -169,6 +200,8 @@ PathFinderAI/
 ├── 📂 docs/
 │   ├── API.md                 # Documentación de endpoints
 │   └── ENDPOINTS.md          # Referencia API
+│
+├── Script_SQL_PathFinderAI.sql  # Script de base de datos
 │
 └── README.md
 ```
@@ -181,9 +214,13 @@ PathFinderAI/
 | :--- | :--- | :--- |
 | POST | `/api/register` | Registrar nuevo usuario |
 | POST | `/api/login` | Iniciar sesión |
+| POST | `/api/auth/google` | Iniciar sesión con Google |
 | GET | `/api/profile` | Obtener perfil |
 | PUT | `/api/profile` | Actualizar perfil |
+| DELETE | `/api/delete-account` | Eliminar cuenta |
 | POST | `/api/generate` | Generar roadmap con IA |
+| POST | `/api/search-resources` | Buscar recursos (Wikipedia + YouTube) |
+| POST | `/api/exam` | Generar examen con IA |
 | POST | `/api/save` | Guardar roadmap |
 | GET | `/api/roadmaps` | Listar roadmaps del usuario |
 | GET | `/api/roadmap/:id` | Obtener roadmap específico |
@@ -191,7 +228,30 @@ PathFinderAI/
 | DELETE | `/api/roadmaps/:id` | Eliminar roadmap |
 | GET | `/api/health` | Estado de la API |
 
-*Ver documento `docs/API.md` para documentación completa.*
+---
+
+## 🎯 Flujo de Uso
+
+### 1. Generar Roadmap
+- Introduce un tema (ej: "JavaScript", "Machine Learning")
+- La IA genera automáticamente una estructura de nodos
+
+### 2. Explorar el Roadmap
+- Visualiza el grafo interactivo
+- Haz clic en nodos para ver/editar detalles
+
+### 3. Buscar Recursos
+- Selecciona un nodo
+- Pulsa "Wiki+YT" para obtener enlaces de Wikipedia y YouTube
+
+### 4. Completar Nodos
+- Cuando estudies un tema, marca como "En estudio"
+- Para marcar como "Aprendido", completa el examen de 3 preguntas
+- Necesitas acertar al menos 2 para aprobar
+
+### 5. Guardar Progreso
+- Los roadmaps se guardan automáticamente en Supabase
+- Exporta a JSON o imagen cuando quieras
 
 ---
 
@@ -200,7 +260,7 @@ PathFinderAI/
 1. Fork del repositorio
 2. Crear rama (`git checkout -b feature/nueva-funcionalidad`)
 3. Commit de cambios (`git commit -am 'Añadir nueva funcionalidad'`)
-4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad'`)
 5. Crear Pull Request
 
 ---

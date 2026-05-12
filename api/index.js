@@ -15,8 +15,14 @@ const userController = require('./controllers/userController');
 const roadmapController = require('./controllers/roadmapController');
 // Controlador de generación (AI)
 const generateController = require('./controllers/generateController');
+// Controlador de búsqueda simple (YouTube)
+const simpleSearchController = require('./controllers/simpleSearchController');
+// Controlador de exámenes
+const examController = require('./controllers/examController');
 // Controlador de admin (stats, requireAdmin)
 const adminController = require('./controllers/adminController');
+// Controlador de métricas (temas consultados)
+const metricsController = require('./controllers/metricsController');
 
 // =============================================
 // CONFIGURACIÓN DEL SERVIDOR
@@ -77,6 +83,9 @@ app.post('/api/register', userController.register);
 // POST /api/login - Iniciar sesión
 app.post('/api/login', userController.login);
 
+// POST /api/auth/google - Iniciar sesión con Google
+app.post('/api/auth/google', userController.googleAuth);
+
 // POST /api/forgot-password - Solicitar recuperación de contraseña
 app.post('/api/forgot-password', userController.forgotPassword);
 
@@ -92,8 +101,8 @@ app.put('/api/profile', userController.authenticateToken, userController.updateP
 // PUT /api/change-password - Cambiar contraseña (protegida)
 app.put('/api/change-password', userController.authenticateToken, userController.changePassword);
 
-// // DELETE /api/delete-account - Eliminar cuenta (protegida)
-// app.delete('/api/delete-account', userController.authenticateToken, userController.deleteAccount);
+// DELETE /api/delete-account - Eliminar cuenta (protegida)
+app.delete('/api/delete-account', userController.authenticateToken, userController.deleteAccount);
 
 // =============================================
 // RUTAS DE GENERACIÓN
@@ -101,6 +110,12 @@ app.put('/api/change-password', userController.authenticateToken, userController
 
 // POST /api/generate - Generar roadmap con IA (protegida)
 app.post('/api/generate', userController.authenticateToken, generateController.generateRoadmap);
+
+// POST /api/search-resources - Buscar recursos con Wikipedia + YouTube (protegida)
+app.post('/api/search-resources', userController.authenticateToken, simpleSearchController.searchResources);
+
+// POST /api/exam - Generar examen con IA (protegida)
+app.post('/api/exam', userController.authenticateToken, examController.generateExam);
 
 // =============================================
 // RUTAS DE ROADMAP
@@ -130,6 +145,16 @@ app.delete('/api/roadmaps/:id', userController.authenticateToken, roadmapControl
 
 // GET /api/admin/stats - Estadísticas del admin (protegida, solo admin)
 app.get('/api/admin/stats', userController.authenticateToken, adminController.requireAdmin, adminController.getAdminStats);
+
+// GET /api/admin/topics - Todos los temas consultados (protegida, solo admin)
+app.get('/api/admin/topics', userController.authenticateToken, adminController.requireAdmin, adminController.getAllTopics);
+
+// =============================================
+// RUTAS DE MÉTRICAS
+// =============================================
+
+// GET /api/metrics/temas - Obtener temas consultados del usuario
+app.get('/api/metrics/temas', userController.authenticateToken, metricsController.getUserMetrics);
 
 // =============================================
 // INICIO DEL SERVIDOR

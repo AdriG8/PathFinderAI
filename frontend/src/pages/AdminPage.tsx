@@ -5,12 +5,15 @@
 // - Sidebar (reutilizada del componente existente)
 // - Panel de métricas (usuarios, roadmaps)
 // - Gráfico de tendencia de registros
+// - Tabla de temas consultados
 // Estados y funciones principales:
 // - stats: objeto con datos del admin
+// - topics: array de temas consultados
 // - loading: estado de carga
 // - error: mensaje de error
 // Efectos:
 // - fetchStats: obtiene estadísticas del servidor
+// - fetchTopics: obtiene todos los temas consultados
 
 import { useState, useEffect } from 'react'
 import { useAuth, API_URL } from '../context/AuthContext'
@@ -22,33 +25,49 @@ interface AdminStats {
   tendenciaUsuarios: { fecha: string; count: number }[]
 }
 
+interface Topic {
+  id: string
+  usuario: string
+  tema: string
+}
+
 export default function AdminPage() {
   const { user, loading: authLoading, signOut } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [stats, setStats] = useState<AdminStats | null>(null)
+  const [topics, setTopics] = useState<Topic[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  // Obtener estadísticas del admin
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       if (!user) return
       
       const token = localStorage.getItem('token')
       try {
-        const response = await fetch(`${API_URL}/api/admin/stats`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+        const [statsRes, topicsRes] = await Promise.all([
+          fetch(`${API_URL}/api/admin/stats`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch(`${API_URL}/api/admin/topics`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+        ])
         
-        if (!response.ok) {
-          const err = await response.json()
+        if (!statsRes.ok) {
+          const err = await statsRes.json()
           setError(err.error || 'Error al cargar estadísticas')
           return
         }
         
-        const data = await response.json()
-        setStats(data)
+        const statsData = await statsRes.json()
+        setStats(statsData)
+        
+        if (topicsRes.ok) {
+          const topicsData = await topicsRes.json()
+          setTopics(topicsData)
+        }
       } catch (err) {
         setError('Error de conexión')
       } finally {
@@ -56,10 +75,9 @@ export default function AdminPage() {
       }
     }
     
-    fetchStats()
+    fetchData()
   }, [user])
 
-  // Mostrar mientras carga
   if (authLoading) {
     return (
       <div className="h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-surface)' }}>
@@ -68,7 +86,6 @@ export default function AdminPage() {
     )
   }
 
-  // Si no hay usuario, mostrar error
   if (!user) {
     return (
       <div className="h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-surface)' }}>
@@ -77,9 +94,10 @@ export default function AdminPage() {
     )
   }
 
-  // Renderizar gráfico SVG
   const renderChart = () => {
-    if (!stats?.tendenciaUsuarios?.length) {
+    const data = stats?.tendenciaUsuarios || []
+    
+    if (!data.length) {
       return (
         <div className="h-48 flex items-center justify-center text-on-surface-variant">
           No hay datos disponibles
@@ -87,20 +105,24 @@ export default function AdminPage() {
       )
     }
 
-    const data = stats.tendenciaUsuarios
     const maxCount = Math.max(...data.map(d => d.count), 1)
     const chartHeight = 180
-    const chartWidth = data.length - 1 || 1
 
-    // Crear puntos para el SVG
-    const points = data.map((d, i) => {
-      const x = (i / chartWidth) * 100
-      const y = chartHeight - ((d.count / maxCount) * chartHeight * 0.9)
-      return `${x},${y}`
-    }).join(' ')
-
-    // Crear área.fill
-    const areaPoints = `M0,${chartHeight} L${points} L100,${chartHeight} Z`
+    let points, areaPoints
+    if (data.length === 1) {
+      const x = 50
+      const y = chartHeight - ((data[0].count / maxCount) * chartHeight * 0.9)
+      points = `${x},${y}`
+      areaPoints = `M0,${chartHeight} L${x},${y} L100,${chartHeight} Z`
+    } else {
+      const chartWidth = data.length - 1
+      points = data.map((d, i) => {
+        const px = (i / chartWidth) * 100
+        const py = chartHeight - ((d.count / maxCount) * chartHeight * 0.9)
+        return `${px},${py}`
+      }).join(' ')
+      areaPoints = `M0,${chartHeight} L${points} L100,${chartHeight} Z`
+    }
 
     return (
       <div className="w-full h-48 relative mt-2">
@@ -126,8 +148,10 @@ export default function AdminPage() {
           {data.length > 0 && (
             <>
               <span>{data[0].fecha}</span>
-              <span>{data[Math.floor(data.length / 2)]?.fecha}</span>
-              <span>{data[data.length - 1]?.fecha}</span>
+              {data.length > 1 && (
+                <span>{data[Math.floor(data.length / 2)]?.fecha}</span>
+              )}
+              <span>{data[data.length - 1].fecha}</span>
             </>
           )}
         </div>
@@ -150,10 +174,8 @@ export default function AdminPage() {
         signOut={signOut}
       />
 
-      {/* Contenido principal */}
       <main className="ml-64">
         <div className="pt-12 px-4 md:px-6 lg:px-8 pb-12 max-w-7xl w-full flex flex-col gap-6 lg:gap-8 overflow-x-hidden">
-          {/* Header */}
           <div className="flex flex-col gap-2">
             <h1 className="text-2xl lg:text-3xl font-bold" style={{ color: 'var(--color-on-surface)' }}>
               Panel de Administración
@@ -169,9 +191,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Métricas */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-            {/* Usuarios */}
             <div className="p-4 lg:p-6 rounded-2xl" style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
               <div className="flex justify-between items-start mb-4 lg:mb-8">
                 <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: 'var(--color-surface-container-high)' }}>
@@ -186,7 +206,6 @@ export default function AdminPage() {
               </h2>
             </div>
 
-            {/* Roadmaps */}
             <div className="p-4 lg:p-6 rounded-2xl" style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
               <div className="flex justify-between items-start mb-4 lg:mb-8">
                 <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: 'var(--color-surface-container-high)' }}>
@@ -202,7 +221,6 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Gráfico */}
           <section className="p-4 lg:p-6 xl:p-8 rounded-2xl flex flex-col gap-4 lg:gap-6" style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-2">
               <div>
@@ -220,22 +238,56 @@ export default function AdminPage() {
                 <div className="animate-pulse" style={{ color: 'var(--color-on-surface)' }}>Cargando...</div>
               </div>
             ) : (
-              <>
-                {/* Grilla */}
-                <div className="relative w-full h-40 lg:h-48 overflow-hidden">
-                  {/* Líneas horizontales */}
-                  <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
-                    <div className="border-t w-full" style={{ borderColor: 'var(--color-outline)' }}></div>
-                    <div className="border-t w-full" style={{ borderColor: 'var(--color-outline)' }}></div>
-                    <div className="border-t w-full" style={{ borderColor: 'var(--color-outline)' }}></div>
-                    <div className="border-t w-full" style={{ borderColor: 'var(--color-outline)' }}></div>
-                    <div className="border-t w-full" style={{ borderColor: 'var(--color-outline)' }}></div>
-                  </div>
-
-                  {/* SVG Chart */}
-                  {renderChart()}
+              <div className="relative w-full h-40 lg:h-48 overflow-hidden">
+                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                  <div className="border-t w-full" style={{ borderColor: 'var(--color-outline)' }}></div>
+                  <div className="border-t w-full" style={{ borderColor: 'var(--color-outline)' }}></div>
+                  <div className="border-t w-full" style={{ borderColor: 'var(--color-outline)' }}></div>
+                  <div className="border-t w-full" style={{ borderColor: 'var(--color-outline)' }}></div>
+                  <div className="border-t w-full" style={{ borderColor: 'var(--color-outline)' }}></div>
                 </div>
-              </>
+                {renderChart()}
+              </div>
+            )}
+          </section>
+
+          <section className="p-4 lg:p-6 xl:p-8 rounded-2xl flex flex-col gap-4 lg:gap-6" style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
+            <div>
+              <h3 className="text-lg lg:text-xl font-semibold" style={{ color: 'var(--color-on-surface)' }}>
+                Temas Consultados
+              </h3>
+              <p className="text-sm mt-1" style={{ color: 'var(--color-on-surface-variant)' }}>
+                Historial de todos los roadmaps generados por los usuarios.
+              </p>
+            </div>
+
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-pulse" style={{ color: 'var(--color-on-surface)' }}>Cargando...</div>
+              </div>
+            ) : topics.length === 0 ? (
+              <div className="flex items-center justify-center py-8 text-on-surface-variant">
+                No hay temas consultados todavía
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--color-outline)' }}>
+                      <th className="text-left py-3 px-4 font-medium" style={{ color: 'var(--color-on-surface-variant)' }}>Usuario</th>
+                      <th className="text-left py-3 px-4 font-medium" style={{ color: 'var(--color-on-surface-variant)' }}>Tema</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topics.map((topic) => (
+                      <tr key={topic.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <td className="py-3 px-4" style={{ color: 'var(--color-on-surface)' }}>{topic.usuario}</td>
+                        <td className="py-3 px-4" style={{ color: 'var(--color-on-surface)' }}>{topic.tema}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </section>
         </div>
