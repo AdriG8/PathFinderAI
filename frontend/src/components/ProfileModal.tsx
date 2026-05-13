@@ -369,12 +369,14 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
               {/* Nombre */}
               <div>
                 <label 
+                  htmlFor="firstName"
                   className="block text-xs ml-1 uppercase tracking-wider mb-2"
                   style={{ color: 'var(--color-on-surface-variant)' }}
                 >
                   Nombre
                 </label>
                 <input
+                  id="firstName"
                   type="text"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
@@ -389,12 +391,14 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
               {/* Apellidos */}
               <div>
                 <label 
+                  htmlFor="lastName"
                   className="block text-xs ml-1 uppercase tracking-wider mb-2"
                   style={{ color: 'var(--color-on-surface-variant)' }}
                 >
                   Apellidos
                 </label>
                 <input
+                  id="lastName"
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
@@ -409,12 +413,14 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
               {/* Email (solo lectura) */}
               <div>
                 <label 
+                  htmlFor="email"
                   className="block text-xs ml-1 uppercase tracking-wider mb-2"
                   style={{ color: 'var(--color-on-surface-variant)' }}
                 >
                   Email
                 </label>
                 <input
+                  id="email"
                   type="email"
                   value={user?.email || ''}
                   disabled
@@ -432,12 +438,14 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
               {/* Nivel de Aprendizaje */}
               <div>
                 <label 
+                  htmlFor="nivel"
                   className="block text-xs ml-1 uppercase tracking-wider mb-2"
                   style={{ color: 'var(--color-on-surface-variant)' }}
                 >
                   Nivel de Aprendizaje
                 </label>
                 <select
+                  id="nivel"
                   value={nivel}
                   onChange={(e) => setNivel(e.target.value as 'principiante' | 'medio' | 'avanzado')}
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none"
@@ -483,12 +491,14 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
               {/* Contraseña actual */}
               <div>
                 <label 
+                  htmlFor="currentPassword"
                   className="block text-xs ml-1 uppercase tracking-wider mb-2"
                   style={{ color: 'var(--color-on-surface-variant)' }}
                 >
                   Contraseña actual
                 </label>
                 <input
+                  id="currentPassword"
                   type="password"
                   placeholder="••••••••"
                   value={currentPassword}
@@ -504,12 +514,14 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
               {/* Nueva contraseña */}
               <div>
                 <label 
+                  htmlFor="newPassword"
                   className="block text-xs ml-1 uppercase tracking-wider mb-2"
                   style={{ color: 'var(--color-on-surface-variant)' }}
                 >
                   Nueva contraseña
                 </label>
                 <input
+                  id="newPassword"
                   type="password"
                   placeholder="••••••••"
                   value={newPassword}
@@ -525,12 +537,14 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
               {/* Confirmar contraseña */}
               <div>
                 <label 
+                  htmlFor="confirmPassword"
                   className="block text-xs ml-1 uppercase tracking-wider mb-2"
                   style={{ color: 'var(--color-on-surface-variant)' }}
                 >
                   Confirmar contraseña
                 </label>
                 <input
+                  id="confirmPassword"
                   type="password"
                   placeholder="••••••••"
                   value={confirmPassword}
@@ -580,12 +594,14 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
               ) : (
                 <div>
                   <label 
+                    htmlFor="confirmPasswordDelete"
                     className="block text-xs ml-1 uppercase tracking-wider mb-2"
                     style={{ color: 'var(--color-on-surface-variant)' }}
                   >
                     Confirma tu contraseña
                   </label>
                   <input
+                    id="confirmPasswordDelete"
                     type="password"
                     placeholder="••••••••"
                     value={currentPassword}
@@ -602,8 +618,9 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
               <button
                 onClick={handleDeleteAccount}
                 disabled={loadingDelete}
+                aria-label="Eliminar mi cuenta"
                 className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-all hover:opacity-90"
-                style={{ backgroundColor: '#ef4444', color: 'white' }}
+                style={{ backgroundColor: '#991b1b', color: 'white' }}
               >
                 <AlertCircle className="w-5 h-5" />
                 {loadingDelete ? 'Eliminando...' : 'Eliminar mi cuenta'}

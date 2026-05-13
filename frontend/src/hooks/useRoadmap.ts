@@ -800,14 +800,14 @@ export function getStatusColor(status: string): string {
  * Usados en la paleta de colores del editor
  */
 export const DEFAULT_NODE_COLORS = [
-  '#10b981', // Verde esmeralda
-  '#3b82f6', // Azul
-  '#8b5cf6', // Violeta
-  '#ec4899', // Rosa
-  '#f59e0b', // Amarillo
-  '#ef4444', // Rojo
-  '#14b8a6', // Teal
-  '#f97316', // Naranja
+  '#059669', // Verde esmeralda oscuro
+  '#2563eb', // Azul oscuro
+  '#7c3aed', // Violeta oscuro
+  '#db2777', // Rosa oscuro
+  '#d97706', // Amarillo/Naranja oscuro
+  '#dc2626', // Rojo oscuro
+  '#0d9488', // Teal oscuro
+  '#ea580c', // Naranja oscuro
 ]
 
 export interface RoadmapStats {

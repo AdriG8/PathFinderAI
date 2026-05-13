@@ -146,7 +146,7 @@ export default function Login() {
               <div className="space-y-3">
                 <label className="block text-xs ml-1 uppercase tracking-wider" style={{ color: 'var(--color-on-surface-variant)' }} htmlFor="email">Email</label>
                 <input 
-                  className="w-full border-none rounded-xl px-4 py-3.5 transition-all outline-none"
+                  className="w-full border-none rounded-xl px-4 py-4 transition-all outline-none min-h-[52px]"
                   style={{ backgroundColor: 'var(--color-surface-container-highest)', color: 'var(--color-on-surface)' }}
                   id="email" 
                   name="email" 
@@ -163,7 +163,7 @@ export default function Login() {
                 </div>
                 <div className="relative">
                   <input 
-                    className="w-full border-none rounded-xl px-4 py-3.5 transition-all outline-none pr-12"
+                    className="w-full border-none rounded-xl px-4 py-4 transition-all outline-none pr-14 min-h-[52px]"
                     style={{ backgroundColor: 'var(--color-surface-container-highest)', color: 'var(--color-on-surface)' }}
                     id="password" 
                     name="password" 
@@ -172,9 +172,10 @@ export default function Login() {
                     required
                   />
                   <button 
-                    className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10"
                     style={{ color: 'var(--color-on-surface-variant)' }}
                     type="button"
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}

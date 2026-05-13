@@ -176,6 +176,20 @@ export default function AdminPage() {
 
       <main className="ml-64">
         <div className="pt-12 px-4 md:px-6 lg:px-8 pb-12 max-w-7xl w-full flex flex-col gap-6 lg:gap-8 overflow-x-hidden">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => window.location.href = '/'}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors hover:opacity-80"
+              style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}
+              aria-label="Volver al inicio"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Volver
+            </button>
+          </div>
+
           <div className="flex flex-col gap-2">
             <h1 className="text-2xl lg:text-3xl font-bold" style={{ color: 'var(--color-on-surface)' }}>
               Panel de Administración

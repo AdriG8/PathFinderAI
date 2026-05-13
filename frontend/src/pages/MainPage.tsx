@@ -840,16 +840,16 @@ export default function MainPage() {
         <div className="relative z-10 w-full max-w-3xl px-6 flex flex-col mb-12 gap-4">
           {/* Botones de ejemplos */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 opacity-60 hover:opacity-100 transition-opacity duration-300">
-            <button onClick={() => generateRoadmap('Quiero aprender Física Cuántica')} disabled={isGenerating} className="p-3 rounded-2xl transition-all text-xs disabled:opacity-50" style={{ backgroundColor: 'var(--color-surface-container-low)', color: 'var(--color-on-surface-variant)', border: '1px solid rgba(72, 72, 72, 0.05)' }}>
-             Quiero aprender Física Cuántica
+            <button onClick={() => generateRoadmap('Quiero aprender Física Cuántica')} disabled={isGenerating} className="p-3 rounded-2xl transition-all text-xs disabled:opacity-50" style={{ backgroundColor: 'var(--color-surface-container-low)', color: 'var(--color-on-surface)', border: '1px solid rgba(72, 72, 72, 0.05)' }}>
+              Quiero aprender Física Cuántica
             </button>
-            <button onClick={() => generateRoadmap('Quiero aprender Desarrollo con IA')} disabled={isGenerating} className="p-3 rounded-2xl transition-all text-xs disabled:opacity-50" style={{ backgroundColor: 'var(--color-surface-container-low)', color: 'var(--color-on-surface-variant)', border: '1px solid rgba(72, 72, 72, 0.05)' }}>
-             Quiero aprender Desarrollo con IA
+            <button onClick={() => generateRoadmap('Quiero aprender Desarrollo con IA')} disabled={isGenerating} className="p-3 rounded-2xl transition-all text-xs disabled:opacity-50" style={{ backgroundColor: 'var(--color-surface-container-low)', color: 'var(--color-on-surface)', border: '1px solid rgba(72, 72, 72, 0.05)' }}>
+              Quiero aprender Desarrollo con IA
             </button>
-            <button onClick={() => generateRoadmap('Quiero aprender Historia del Arte')} disabled={isGenerating} className="p-3 rounded-2xl transition-all text-xs disabled:opacity-50" style={{ backgroundColor: 'var(--color-surface-container-low)', color: 'var(--color-on-surface-variant)', border: '1px solid rgba(72, 72, 72, 0.05)' }}>
+            <button onClick={() => generateRoadmap('Quiero aprender Historia del Arte')} disabled={isGenerating} className="p-3 rounded-2xl transition-all text-xs disabled:opacity-50" style={{ backgroundColor: 'var(--color-surface-container-low)', color: 'var(--color-on-surface)', border: '1px solid rgba(72, 72, 72, 0.05)' }}>
               Quiero aprender Historia del Arte
             </button>
-            <button onClick={() => generateRoadmap('Quiero aprender Estrategia de Negocios')} disabled={isGenerating} className="p-3 rounded-2xl transition-all text-xs disabled:opacity-50" style={{ backgroundColor: 'var(--color-surface-container-low)', color: 'var(--color-on-surface-variant)', border: '1px solid rgba(72, 72, 72, 0.05)' }}>
+            <button onClick={() => generateRoadmap('Quiero aprender Estrategia de Negocios')} disabled={isGenerating} className="p-3 rounded-2xl transition-all text-xs disabled:opacity-50" style={{ backgroundColor: 'var(--color-surface-container-low)', color: 'var(--color-on-surface)', border: '1px solid rgba(72, 72, 72, 0.05)' }}>
               Quiero aprender Estrategia de Negocios
             </button>
           </div>
@@ -868,6 +868,7 @@ export default function MainPage() {
             <button 
               onClick={() => generateRoadmap(searchPrompt)} 
               disabled={isGenerating}
+              aria-label="Enviar mensaje"
               className="ml-4 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all disabled:opacity-50" 
               style={{ backgroundColor: 'var(--color-surface-bright)', color: 'var(--color-on-surface)' }}
             >

@@ -106,7 +106,7 @@ const CustomNode = ({ data, id }: { data: RoadmapNodeData; id: string }) => {
         </div>
       )}
       
-      <div className="text-xs mt-1" style={{ color }}>
+      <div className="text-xs mt-1" style={{ color: '#9ca3af' }}>
         {getStatusSymbol(data.status)}
       </div>
       
@@ -534,40 +534,49 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
             <div className="flex flex-col gap-2 p-3 rounded-xl" style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
               <input autoFocus className="px-3 py-2 rounded-full text-sm" style={{ backgroundColor: 'var(--color-surface-container-highest)', color: 'var(--color-on-surface)' }} placeholder="Nombre del nodo..." value={newNodeName} onChange={(e) => setNewNodeName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addNode(); if (e.key === 'Escape') setShowAddInput(false) }} />
               <div className="flex gap-2">
-                <button onClick={addNode} className="flex-1 px-3 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: '#10b981', color: 'white' }}>Añadir</button>
+                <button onClick={addNode} className="flex-1 px-3 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: '#047857', color: 'white' }}>Añadir</button>
                 <button onClick={() => { setShowAddInput(false); setNewNodeName('') }} className="flex-1 px-3 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}>Cancelar</button>
               </div>
             </div>
           ) : (
             <>
-              <button onClick={() => setShowAddInput(true)} className="px-4 py-2 rounded-xl font-bold text-sm" style={{ backgroundColor: '#10b981', color: 'white' }}>+ Añadir</button>
-              <button onClick={() => setShowExportModal(true)} className="px-4 py-2 rounded-xl font-bold text-sm" style={{ backgroundColor: '#8b5cf6', color: 'white' }}>Exportar</button>
-              <button onClick={autoLayout} className="px-4 py-2 rounded-xl font-bold text-sm" style={{ backgroundColor: '#f59e0b', color: 'white' }}>Organizar</button>
-              {mapId && <button onClick={handleSave} className="px-4 py-2 rounded-xl font-bold text-sm" style={{ backgroundColor: '#3b82f6', color: 'white' }}>Guardar</button>}
+              <button onClick={() => setShowAddInput(true)} className="px-4 py-2 rounded-xl font-bold text-sm" style={{ backgroundColor: '#047857', color: 'white' }}>+ Añadir</button>
+              <button onClick={() => setShowExportModal(true)} className="px-4 py-2 rounded-xl font-bold text-sm" style={{ backgroundColor: '#6d28d9', color: 'white' }}>Exportar</button>
+              <button onClick={autoLayout} className="px-4 py-2 rounded-xl font-bold text-sm" style={{ backgroundColor: '#b45309', color: 'white' }}>Organizar</button>
+              {mapId && <button onClick={handleSave} className="px-4 py-2 rounded-xl font-bold text-sm" style={{ backgroundColor: '#1d4ed8', color: 'white' }}>Guardar</button>}
             </>
           )}
 
           {selectedNodeIds.size > 0 && (
             <>
-              <button onClick={deleteSelectedNodes} className="px-4 py-2 rounded-xl font-bold text-sm" style={{ backgroundColor: '#ef4444', color: 'white' }}>Eliminar ({selectedNodeIds.size})</button>
+              <button onClick={deleteSelectedNodes} className="px-4 py-2 rounded-xl font-bold text-sm" style={{ backgroundColor: '#b91c1c', color: 'white' }}>Eliminar ({selectedNodeIds.size})</button>
               <div className="flex flex-wrap gap-1 p-2 rounded-xl" style={{ backgroundColor: 'var(--color-surface-container-high)' }}>
                 {DEFAULT_NODE_COLORS.map((color) => (
-                  <button key={color} onClick={() => changeNodeColor(color)} className="w-7 h-7 rounded-full border-2" style={{ backgroundColor: color, borderColor: selectedNodeIds.size === 1 && nodes.find(n => n.id === [...selectedNodeIds][0])?.data.color === color ? 'var(--color-on-surface)' : 'transparent' }} />
+                  <button 
+                    key={color} 
+                    onClick={() => changeNodeColor(color)} 
+                    className="w-8 h-8 rounded-full border-2" 
+                    style={{ backgroundColor: color, borderColor: selectedNodeIds.size === 1 && nodes.find(n => n.id === [...selectedNodeIds][0])?.data.color === color ? 'white' : 'transparent' }}
+                    aria-label={`Color ${color}`}
+                    title={`Aplicar color ${color}`}
+                  />
                 ))}
                 <div className="relative">
                   <button
                     onClick={() => colorInputRef.current?.click()}
-                    className="w-7 h-7 rounded-full border-2"
+                    className="w-8 h-8 rounded-full border-2"
                     style={{
                       background: 'linear-gradient(90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff)',
                       borderColor: 'transparent',
                       borderRadius: '9999px',
                     }}
-                    title="Color personalizado"
+                    aria-label="Color personalizado"
+                    title="Elegir color personalizado"
                   />
                   <input
                     ref={colorInputRef}
                     type="color"
+                    aria-label="Selector de color personalizado"
                     onChange={(e) => {
                       changeNodeColor(e.target.value)
                     }}
@@ -582,9 +591,9 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
         </div>
       )}
 
-      {readOnly && (
+      {readOnly && mapId && (
         <div className="absolute top-4 left-4 z-20">
-          <button onClick={() => window.history.back()} className="px-4 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: 'var(--color-surface-bright)', color: 'var(--color-on-surface)' }}>← Volver</button>
+          <button onClick={() => window.open(`/roadmap-editor?id=${mapId}`, '_self')} className="px-4 py-2 rounded-full font-bold text-sm" style={{ backgroundColor: 'var(--color-surface-bright)', color: 'var(--color-on-surface)' }}>← Volver al Editor</button>
         </div>
       )}
 
@@ -664,7 +673,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
           <div className="p-4 pb-3" style={{ borderBottom: `3px solid ${clickedNode.data.color || getStatusColor(clickedNode.data.status)}` }}>
             <div className="flex justify-between items-start gap-2">
               <h2 className="text-lg font-bold leading-tight" style={{ color: 'var(--color-on-surface)' }}>{clickedNode.data.label}</h2>
-              <button onClick={closePanel} className="p-1.5 rounded-full transition-colors hover:bg-opacity-20" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface-variant)' }}>
+              <button onClick={closePanel} aria-label="Cerrar panel" className="p-1.5 rounded-full transition-colors hover:bg-opacity-20" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface-variant)' }}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -682,7 +691,13 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
                   {getStatusSymbol(clickedNode.data.status)} {clickedNode.data.status.charAt(0).toUpperCase() + clickedNode.data.status.slice(1)}
                 </div>
               ) : (
-                <select value={clickedNode.data.status} onChange={(e) => changeStatus(e.target.value)} className="mt-2 px-3 py-2 rounded-lg text-sm w-full font-medium transition-all" style={{ backgroundColor: 'var(--color-surface-container-high)', color: getStatusColor(clickedNode.data.status), border: '1px solid var(--color-outline)' }}>
+                <select 
+                  value={clickedNode.data.status} 
+                  onChange={(e) => changeStatus(e.target.value)} 
+                  aria-label="Estado del nodo"
+                  className="mt-2 px-3 py-2 rounded-lg text-sm w-full font-medium transition-all" 
+                  style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)', border: '1px solid var(--color-outline)' }}
+                >
                   <option value="pendiente">○ Pendiente</option>
                   <option value="estudiando">⏳ Estudiando</option>
                   <option value="aprendido">✓ Aprendido</option>
@@ -696,6 +711,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
                 <input
                   type="number"
                   min="0"
+                  aria-label="Horas estimadas para completar este nodo"
                   value={clickedNode.data.horas || 0}
                   onChange={(e) => {
                     const horas = parseInt(e.target.value) || 0
@@ -716,8 +732,9 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
                   <button
                     onClick={handleSearchResources}
                     disabled={isSearching || !clickedNode}
+                    aria-label="Buscar recursos en Wikipedia y YouTube"
                     className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:opacity-80 flex items-center gap-1.5"
-                    style={{ backgroundColor: '#e15b00', color: 'white' }}
+                    style={{ backgroundColor: '#c2410c', color: 'white' }}
                   >
                     {isSearching ? (
                       <>
