@@ -172,61 +172,140 @@ Este script crea las tablas necesarias:
 
 ```
 PathFinderAI/
-├── 📂 api/                      # Servidor Express
-│   ├── 📂 controllers/         # Lógica de endpoints
-│   │   ├── generateController.js   # Generación con IA
-│   │   ├── examController.js       # Generación de exámenes
-│   │   ├── simpleSearchController.js  # Búsqueda Wikipedia + YouTube
-│   │   ├── roadmapController.js   # CRUD de roadmaps
-│   │   ├── userController.js       # Autenticación
-│   │   └── adminController.js     # Estadísticas admin
-│   ├── index.js                # Punto de entrada
-│   └── package.json
 │
-├── 📂 frontend/                 # Aplicación React
+├── 📂 api/                          # Backend Express.js
+│   ├── 📂 controllers/               # Controladores de endpoints
+│   │   ├── adminController.js        # Estadísticas del admin
+│   │   ├── examController.js        # Generación de exámenes con IA
+│   │   ├── generateController.js    # Generación de roadmaps con IA
+│   │   ├── metricsController.js     # Métricas de uso
+│   │   ├── roadmapController.js     # CRUD de roadmaps
+│   │   ├── simpleSearchController.js # Búsqueda de recursos
+│   │   └── userController.js        # Autenticación y perfiles
+│   ├── 📂 models/                   # Modelos de datos
+│   │   ├── database.js              # Configuración de Supabase
+│   │   ├── metricModel.js          # Modelo de métricas
+│   │   ├── roadmapModel.js         # Modelo de roadmaps
+│   │   └── userModel.js             # Modelo de usuarios
+│   ├── index.js                    # Punto de entrada
+│   ├── package.json
+│   └── API_backend.md               # Documentación de endpoints
+│
+├── 📂 frontend/                      # Aplicación React
 │   ├── 📂 src/
-│   │   ├── 📂 components/      # Componentes UI
-│   │   │   ├── RoadmapEditor.tsx   # Editor de grafos
-│   │   │   ├── ExamModal.tsx      # Modal de examen
-│   │   │   ├── ProfileModal.tsx    # Modal de perfil
-│   │   │   ├── Sidebar.tsx        # Barra lateral
-│   │   │   └── 📂 ui/         # Componentes shadcn
-│   │   ├── 📂 pages/          # Páginas
-│   │   ├── 📂 hooks/          # Hooks personalizados
-│   │   ├── 📂 context/        # Contextos React
-│   │   └── 📂 lib/            # Utilidades
-│   └── package.json
+│   │   ├── 📂 components/           # Componentes UI
+│   │   │   ├── ExamModal.tsx       # Modal de examen
+│   │   │   ├── Footer.tsx          # Pie de página
+│   │   │   ├── PageTransition.tsx  # Transición de páginas
+│   │   │   ├── ProfileModal.tsx     # Modal de perfil
+│   │   │   ├── ProtectedRoute.tsx  # Ruta protegida
+│   │   │   ├── RoadmapEditor.tsx    # Editor de grafos con React Flow
+│   │   │   ├── ScrollToTop.tsx      # Scroll automático
+│   │   │   ├── Sidebar.tsx          # Barra lateral
+│   │   │   └── 📂 ui/               # Componentes shadcn/ui
+│   │   │       ├── alert.tsx
+│   │   │       └── sonner.tsx
+│   │   ├── 📂 context/              # Contextos React
+│   │   │   └── AuthContext.tsx      # Contexto de autenticación
+│   │   ├── 📂 hooks/                # Hooks personalizados
+│   │   │   ├── index.ts
+│   │   │   └── useRoadmap.ts        # Gestión de estado del roadmap
+│   │   ├── 📂 lib/                  # Utilidades
+│   │   │   ├── client.ts           # Cliente Supabase
+│   │   │   ├── server.ts           # Servidor Supabase
+│   │   │   └── utils.ts             # Funciones utilitarias
+│   │   ├── 📂 pages/                # Páginas/Rutas
+│   │   │   ├── AdminPage.tsx       # Panel de administración
+│   │   │   ├── AuthCallback.tsx     # Callback de autenticación
+│   │   │   ├── ConfirmEmail.tsx     # Confirmación de email
+│   │   │   ├── EmailConfirmed.tsx    # Email confirmado
+│   │   │   ├── ForgotPassword.tsx    # Recuperar contraseña
+│   │   │   ├── Login.tsx            # Página de login
+│   │   │   ├── MainPage.tsx         # Página principal
+│   │   │   ├── Register.tsx          # Página de registro
+│   │   │   ├── ResetPassword.tsx    # Restablecer contraseña
+│   │   │   ├── RoadmapEditorPage.tsx # Editor de roadmap
+│   │   │   └── RoadmapViewerPage.tsx # Visor de roadmap
+│   │   ├── 📂 types/                # Definiciones TypeScript
+│   │   │   └── google.d.ts          # Tipos de Google OAuth
+│   │   ├── 📂 utils/                # Utilidades
+│   │   │   ├── googleAuth.ts        # Utilidad de autenticación Google
+│   │   │   └── sanitize.ts          # Funciones de sanitización
+│   │   ├── App.tsx                  # Componente principal
+│   │   ├── main.tsx                 # Punto de entrada
+│   │   └── index.css                # Estilos globales
+│   ├── public/                       # Archivos públicos
+│   ├── package.json
+│   ├── vite.config.ts               # Configuración de Vite
+│   ├── tailwind.config.js           # Configuración de Tailwind
+│   └── vercel.json                  # Configuración de Vercel
 │
-├── 📂 docs/
-│   ├── API.md                 # Documentación de endpoints
-│   └── ENDPOINTS.md          # Referencia API
+├── 📂 docs/                          # Documentación
+│   └── API_backend.md               # Documentación de endpoints
 │
-├── Script_SQL_PathFinderAI.sql  # Script de base de datos
+├── 📂 .github/                      # Configuración de GitHub
+│   └── workflows/                   # Acciones de GitHub (vacío)
 │
-└── README.md
+├── Script_SQL_PathFinderAI.sql       # Script de base de datos
+├── README.md                        # Este archivo
+└── package.json                    # Workspace root (opcional)
 ```
-
 ---
 
 ## 🔌 Endpoints Principales
+
+### Autenticación
 
 | Método | Endpoint | Descripción |
 | :--- | :--- | :--- |
 | POST | `/api/register` | Registrar nuevo usuario |
 | POST | `/api/login` | Iniciar sesión |
 | POST | `/api/auth/google` | Iniciar sesión con Google |
-| GET | `/api/profile` | Obtener perfil |
+| POST | `/api/forgot-password` | Solicitar recuperación de contraseña |
+| POST | `/api/logout` | Cerrar sesión |
+| GET | `/api/health` | Estado de la API |
+
+### Perfil
+
+| Método | Endpoint | Descripción |
+| :--- | :--- | :--- |
+| GET | `/api/profile` | Obtener perfil del usuario |
 | PUT | `/api/profile` | Actualizar perfil |
+| PUT | `/api/change-password` | Cambiar contraseña |
 | DELETE | `/api/delete-account` | Eliminar cuenta |
-| POST | `/api/generate` | Generar roadmap con IA |
+
+### Generación y Contenido
+
+| Método | Endpoint | Descripción |
+| :--- | :--- | :--- |
+| POST | `/api/generate` | Generar roadmap con IA (Gemini) |
 | POST | `/api/search-resources` | Buscar recursos (Wikipedia + YouTube) |
 | POST | `/api/exam` | Generar examen con IA |
+
+### Roadmaps
+
+| Método | Endpoint | Descripción |
+| :--- | :--- | :--- |
 | POST | `/api/save` | Guardar roadmap |
-| GET | `/api/roadmaps` | Listar roadmaps del usuario |
+| GET | `/api/roadmaps` | Listar todos los roadmaps del usuario |
 | GET | `/api/roadmap/:id` | Obtener roadmap específico |
 | PUT | `/api/roadmaps/:id` | Actualizar roadmap |
 | DELETE | `/api/roadmaps/:id` | Eliminar roadmap |
-| GET | `/api/health` | Estado de la API |
+
+### Administración
+
+| Método | Endpoint | Descripción |
+| :--- | :--- | :--- |
+| GET | `/api/admin/stats` | Estadísticas globales |
+| GET | `/api/admin/topics` | Lista de todos los temas |
+
+### Métricas
+
+| Método | Endpoint | Descripción |
+| :--- | :--- | :--- |
+| GET | `/api/metrics/temas` | Temas consultados por el usuario |
+
+> 📖 **Documentación completa:** Ver [`api/API_backend.md`](api/API_backend.md) para detalles de request/response.
 
 ---
 
