@@ -1,7 +1,7 @@
 # API PathFinderAI - Documentación de Endpoints
 
 Base URL: `http://localhost:3000` (desarrollo)  
-Puertos de producción: Variables de entorno de Vercel
+Producción: Configurar en variables de entorno del despliegue (Vercel/Railway)
 
 ---
 
