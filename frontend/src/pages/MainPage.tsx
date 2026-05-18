@@ -59,6 +59,10 @@ export default function MainPage() {
   const [searchPrompt, setSearchPrompt] = useState('')
   // Estado para indicar si se está generando un roadmap
   const [isGenerating, setIsGenerating] = useState(false)
+  // Estado para el mensaje de carga del roadmap
+  const [generatingMessage, setGeneratingMessage] = useState('')
+  // Estado para el progreso de carga
+  const [generatingProgress, setGeneratingProgress] = useState(0)
   // Estado para el menú de roadmap
   const [activeRoadmapMenu, setActiveRoadmapMenu] = useState<string | null>(null)
   // Estado para el roadmap que está siendo renombrado (input inline)
@@ -276,53 +280,89 @@ export default function MainPage() {
   // Función para generar roadmap con IA
   const generateRoadmap = async (prompt: string) => {
     if (!prompt.trim() || isGenerating) return
-    
-    // Verificar que el usuario esté autenticado
+
     if (!user) {
       toast.info('Inicia sesión', {
         description: 'Debes iniciar sesión para generar un roadmap',
       })
       return
     }
-    
+
     setIsGenerating(true)
+    setGeneratingProgress(0)
+
+    const loadingMessages = [
+      'Analizando tema...',
+      'Creando estructura...',
+      'Organizando conceptos...',
+      'Finalizando...'
+    ]
+
+    let messageIndex = 0
+    const messageInterval = setInterval(() => {
+      if (messageIndex < loadingMessages.length) {
+        setGeneratingMessage(loadingMessages[messageIndex])
+        setGeneratingProgress((messageIndex + 1) / loadingMessages.length * 70)
+        messageIndex++
+      }
+    }, 2500)
+
     const token = localStorage.getItem('token')
-    
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('timeout')), 60000)
+    })
+
     try {
-      const response = await fetch(`${API_URL}/api/generate`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ prompt })
-      })
-      
+      const response = await Promise.race([
+        fetch(`${API_URL}/api/generate`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prompt })
+        }),
+        timeoutPromise
+      ]) as Response
+
+      clearInterval(messageInterval)
+
       if (!response.ok) {
         const err = await response.json()
         const errorMessage = err.error?.toLowerCase() || ''
-        
-        // Manejar errores específicos
-        if (errorMessage.includes('tema no válido') || errorMessage.includes('tema no valido')) {
+        const errorStatus = response.status
+
+        if (errorMessage.includes('tema no valido') || errorMessage.includes('tema no válido')) {
           toast.error('Tema no válido', {
-            description: 'El tema introducido no es válido para generar un roadmap',
+            description: 'El tema introducido no es válido, vuelva a introducir un tema correcto',
           })
-        } else if (errorMessage.includes('high demand') || errorMessage.includes('service unavailable') || errorMessage.includes('saturado')) {
+        } else if (errorStatus === 429) {
+          toast.error('Demasiadas peticiones', {
+            description: 'Has hecho demasiadas peticiones, por favor inténtelo más tarde',
+          })
+        } else if (errorStatus === 503 || errorMessage.includes('high demand') || errorMessage.includes('service unavailable') || errorMessage.includes('saturado')) {
           toast.error('Servicio saturado', {
-            description: 'Por favor espere y vuelva a intentarlo más tarde',
+            description: 'El servicio de generación está experimentando una alta demanda, por favor espere e inténtelo más tarde',
           })
         } else {
           toast.error('Error al generar roadmap', {
             description: 'Ha ocurrido un error, vuelve a intentarlo más tarde',
           })
         }
+        setIsGenerating(false)
         return
       }
-      
+
+      setGeneratingMessage('Guardando...')
+      setGeneratingProgress(85)
+
       const generatedData = await response.json()
       console.log('Roadmap generado:', generatedData)
-      
-      // Guardar roadmap en la base de datos (como objeto JSON, no string)
+
+      setGeneratingMessage('Abriendo roadmap...')
+      setGeneratingProgress(95)
+
       const saveResponse = await fetch(`${API_URL}/api/save`, {
         method: 'POST',
         headers: {
@@ -334,13 +374,12 @@ export default function MainPage() {
           json: generatedData
         })
       })
-      
+
       if (saveResponse.ok) {
         const savedRoadmap = await saveResponse.json()
         console.log('Roadmap guardado en DB:', savedRoadmap)
-        
+
         if (savedRoadmap && savedRoadmap.ID) {
-// Agregar a la lista de roadmaps en memoria
           const newRoadmap: Roadmap = {
             ID: savedRoadmap.ID,
             ID_Usuario: user?.id || '',
@@ -349,31 +388,29 @@ export default function MainPage() {
             Fecha_Creacion: new Date().toISOString()
           }
           setRoadmaps([newRoadmap, ...roadmaps])
-          
-          // Mostrar notificación de éxito
+
           toast.success('Roadmap generado', {
             description: `Se ha creado el roadmap "${prompt}"`,
           })
-          
-          // Abrir roadmap (editor en desktop, viewer en móvil)
+
           openRoadmap(savedRoadmap.ID)
         } else {
           throw new Error('No se pudo obtener el ID del roadmap guardado')
         }
       } else {
-        // Si falla, usar sessionStorage como fallback
         const mapId = `map_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         sessionStorage.setItem(mapId, JSON.stringify(generatedData))
         openRoadmap(mapId)
       }
-      
-    } catch (error) {
+
+      setGeneratingProgress(100)
+    } catch (error: any) {
+      clearInterval(messageInterval)
       console.error('Error generating roadmap:', error)
-      const errorMessage = error instanceof Error ? error.message.toLowerCase() : ''
-      
-      if (errorMessage.includes('high demand') || errorMessage.includes('service unavailable') || errorMessage.includes('saturado')) {
-        toast.error('Servicio saturado', {
-          description: 'Por favor espere y vuelva a intentarlo más tarde',
+
+      if (error.message === 'timeout') {
+        toast.error('Tiempo de espera agotado', {
+          description: 'El servicio está tardando demasiado, por favor inténtelo más tarde',
         })
       } else {
         toast.error('Error al generar el roadmap', {
@@ -382,6 +419,8 @@ export default function MainPage() {
       }
     } finally {
       setIsGenerating(false)
+      setGeneratingMessage('')
+      setGeneratingProgress(0)
     }
   }
 
@@ -881,10 +920,32 @@ export default function MainPage() {
           </div>
         </div>
 
+{/* Loading overlay */}
+        {isGenerating && (
+          <div className="absolute inset-0 z-40 flex items-center justify-center" style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}>
+            <div className="text-center p-8 rounded-2xl" style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
+              <div className="relative w-20 h-20 mx-auto mb-4">
+                <div className="absolute inset-0 border-4 rounded-full" style={{ borderColor: 'var(--color-surface-container-high)' }} />
+                <div className="absolute inset-0 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
+              </div>
+              <p className="text-base font-medium mb-4" style={{ color: 'var(--color-on-surface)' }}>{generatingMessage || 'Generando roadmap...'}</p>
+              <div className="w-64 h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--color-surface-container-high)' }}>
+                <div
+                  className="h-full rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${generatingProgress}%`, backgroundColor: 'var(--color-primary)' }}
+                />
+              </div>
+              <p className="text-xs mt-3" style={{ color: 'var(--color-on-surface-variant)' }}>
+                Por favor espera...
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Footer de advertencia */}
         <footer className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full px-6 z-10 text-center">
           <p className="text-[10px] tracking-widest uppercase font-semibold" style={{ color: 'var(--color-on-tertiary-fixed-variant)' }}>
-            PathFinder AI puede cometer errores. Considera verificar la información importante.
+            PathFinder AI puede cometer errores. Considera verificar la informacion importante.
           </p>
         </footer>
       </main>

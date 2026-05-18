@@ -44,7 +44,7 @@ export interface RoadmapNodeData {
   horas?: number
   notes?: string
   resources?: {
-    enlaces?: { nombre: string; url: string }[]
+    enlaces?: Array<{ nombre?: string; title?: string; url: string; type?: string; channel?: string; description?: string }>
   }
 }
 

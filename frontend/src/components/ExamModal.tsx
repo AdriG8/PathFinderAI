@@ -37,6 +37,7 @@ export default function ExamModal({ isOpen, onClose, topic, onPass }: ExamModalP
   // Estados del componente
   const [questions, setQuestions] = useState<ExamQuestion[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMessage, setLoadingMessage] = useState('Generando examen...')
   const [error, setError] = useState<string | null>(null)
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
@@ -44,6 +45,7 @@ export default function ExamModal({ isOpen, onClose, topic, onPass }: ExamModalP
   const [answers, setAnswers] = useState<{ question: number; selected: string; correct: boolean }[]>([])
   const [examFinished, setExamFinished] = useState(false)
   const [passed, setPassed] = useState(false)
+  const [loadingProgress, setLoadingProgress] = useState(0)
 
   // URL de la API
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -68,12 +70,31 @@ export default function ExamModal({ isOpen, onClose, topic, onPass }: ExamModalP
     setAnswers([])
     setExamFinished(false)
     setPassed(false)
+    setLoadingProgress(0)
+
+    const loadingMessages = [
+      'Preparando preguntas...',
+      'Generando opciones...',
+      'Casi listo...'
+    ]
+
+    let messageIndex = 0
+    const messageInterval = setInterval(() => {
+      if (messageIndex < loadingMessages.length) {
+        setLoadingMessage(loadingMessages[messageIndex])
+        setLoadingProgress((messageIndex + 1) / loadingMessages.length * 80)
+        messageIndex++
+      }
+    }, 2000)
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('timeout')), 45000)
+    })
 
     try {
-      // Obtiene el token de autenticacion
       const token = localStorage.getItem('token')
-      // Realiza la peticion al endpoint de examen
-      const response = await fetch(`${API_URL}/api/exam`, {
+
+      const fetchPromise = fetch(`${API_URL}/api/exam`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,25 +103,50 @@ export default function ExamModal({ isOpen, onClose, topic, onPass }: ExamModalP
         body: JSON.stringify({ topic })
       })
 
+      const response = await Promise.race([fetchPromise, timeoutPromise]) as Response
       const data = await response.json()
+      const errorStatus = response.status
+      const errorMessage = (data.error || '').toLowerCase()
 
-      // Si hay error en la respuesta, lo muestra y marca como aprobado
+      clearInterval(messageInterval)
+
       if (!response.ok) {
-        setError(data.error)
-        setPassed(true)
-        setExamFinished(true)
+        if (errorStatus === 429 || errorMessage.includes('demasiadas peticiones') || errorMessage.includes('too many requests')) {
+          setError('Has hecho demasiadas peticiones, por favor inténtelo más tarde')
+        } else if (errorStatus === 503 || errorMessage.includes('high demand') || errorMessage.includes('service unavailable') || errorMessage.includes('saturado')) {
+          setError('El servicio de generación está experimentando una alta demanda, por favor espere e inténtelo más tarde')
+        } else if (errorMessage.includes('tema no válido') || errorMessage.includes('tema no valido')) {
+          setError('El tema introducido no es válido, vuelva a introducir un tema correcto')
+        } else {
+          setError('Ha habido un error generando su examen, por favor inténtelo de nuevo')
+        }
         setLoading(false)
         return
       }
 
-      // Establece las preguntas del examen
-      setQuestions(data.questions || [])
+      if (!data.questions || !Array.isArray(data.questions) || data.questions.length === 0) {
+        setError('Ha habido un error generando su examen, por favor inténtelo de nuevo')
+        setLoading(false)
+        return
+      }
+
+      setLoadingProgress(100)
+      setLoadingMessage('¡Examen listo!')
+      setTimeout(() => {
+        setQuestions(data.questions || [])
+        setLoading(false)
+      }, 300)
     } catch (err: any) {
-      // Captura errores de red y marca como aprobado
-      setError(err.message)
-      setPassed(true)
-      setExamFinished(true)
-    } finally {
+      clearInterval(messageInterval)
+      const errorText = err.message || ''
+
+      if (errorText === 'timeout') {
+        setError('El servicio está tardando demasiado, por favor inténtelo más tarde')
+      } else if (errorText.includes('Unexpected token') || errorText.includes('JSON')) {
+        setError('Ha habido un error generando su examen, por favor inténtelo de nuevo')
+      } else {
+        setError('Ha ocurrido un error, por favor inténtelo más tarde')
+      }
       setLoading(false)
     }
   }
@@ -146,15 +192,7 @@ export default function ExamModal({ isOpen, onClose, topic, onPass }: ExamModalP
   // FUNCION: Finalizar examen
   // ============================================
   const finishExam = () => {
-    // Si hay error, marca directamente como aprobado
-    if (error) {
-      setPassed(true)
-      setExamFinished(true)
-      return
-    }
-    // Cuenta las respuestas correctas
     const correctCount = answers.filter(a => a.correct).length
-    // Necesita al menos 2 de 3 para aprobar
     const passedExam = correctCount >= 2
     setPassed(passedExam)
     setExamFinished(true)
@@ -194,18 +232,38 @@ export default function ExamModal({ isOpen, onClose, topic, onPass }: ExamModalP
           {/* Estado de carga */}
           {loading && (
             <div className="flex flex-col items-center py-8">
-              <div className="w-10 h-10 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
-              <p className="mt-4 text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>Generando examen...</p>
+              <div className="relative w-16 h-16 mb-4">
+                <div className="absolute inset-0 border-4 rounded-full" style={{ borderColor: 'var(--color-surface-container-high)' }} />
+                <div className="absolute inset-0 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
+              </div>
+              <p className="text-sm font-medium mb-3" style={{ color: 'var(--color-on-surface)' }}>{loadingMessage}</p>
+              <div className="w-48 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--color-surface-container-high)' }}>
+                <div
+                  className="h-full rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${loadingProgress}%`, backgroundColor: 'var(--color-primary)' }}
+                />
+              </div>
+              <p className="text-xs mt-3" style={{ color: 'var(--color-on-surface-variant)' }}>
+                Esto puede tardar unos segundos
+              </p>
             </div>
           )}
 
           {/* Mensaje de error */}
           {error && (
             <div className="text-center py-8">
-              <p className="text-red-400 mb-4">{error}</p>
-              <button onClick={generateExam} className="px-4 py-2 rounded-lg font-medium" style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}>
-                Reintentar
-              </button>
+              <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)' }}>
+                <X className="w-8 h-8" style={{ color: '#ef4444' }} />
+              </div>
+              <p className="text-sm mb-2" style={{ color: 'var(--color-on-surface)' }}>{error}</p>
+              <div className="flex gap-3 justify-center mt-4">
+                <button onClick={onClose} className="px-4 py-2 rounded-lg font-medium" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}>
+                  Cerrar
+                </button>
+                <button onClick={generateExam} className="px-4 py-2 rounded-lg font-medium" style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}>
+                  Reintentar
+                </button>
+              </div>
             </div>
           )}
 
