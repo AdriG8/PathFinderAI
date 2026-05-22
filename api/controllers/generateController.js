@@ -112,7 +112,10 @@ Estructura requerida:
         "isEditing": false,
         "horas": 2,
         "resources": {
-          "enlaces": []
+          "enlaces": [
+            { "title": "Introduccion al tema - Wikipedia", "url": "https://es.wikipedia.org/wiki/Tema", "type": "documentacion" },
+            { "title": "Tutorial completo", "url": "https://www.youtube.com/watch?v=ejemplo", "type": "video" }
+          ]
         }
       }
     }
@@ -134,7 +137,7 @@ REGLAS ADICIONALES:
 - type solo puede ser: "custom"
 - status valores: "pendiente", "estudiando", "aprendido"
 - horas: tiempo estimado en horas para completar ese nodo
-- resources.enlaces: DEBE SER UN ARRAY VACIO [] (no generar enlaces, el usuario los buscara manualmente con el boton de buscar recursos)
+- resources.enlaces: GENERA 2-3 enlaces utiles por nodo con recursos reales de aprendizaje. Cada enlace debe tener: { "title": "Titulo descriptivo", "url": "https://...", "type": "video" | "documentacion" }. Prioriza enlaces a Wikipedia, documentacion oficial y canales educativos conocidos de YouTube. Las URLs deben ser reales y validas.
 - Cada nodo debe tener su propio id unico numerico (1, 2, 3...)
 - Nodo raiz: UNICO nodo sin aristas de entrada (solo tiene aristas de salida)
 - Nodos intermedio: tienen UN padre y pueden tener varios hijos
@@ -170,7 +173,7 @@ SI EL TEMA NO TIENE SENTIDO O NO SE PUEDE ESTRUCTURAR, RESPONDE SOLO CON: TEMA N
 VERIFICA QUE TODOS LOS IDS EN EDGES EXISTAN EN NODES ANTES DE RESPONDER.`;
 
     const result = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.5-flash',
       contents: generationPrompt,
     });
 

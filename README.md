@@ -334,7 +334,35 @@ PathFinderAI/
 
 ---
 
-## 🤝 Contribuir
+## � Tests
+
+PathFinderAI incluye pruebas unitarias y de integración para backend y frontend.
+
+### Ejecutar tests del Backend (Jest)
+
+```bash
+cd api
+npm test
+```
+
+### Ejecutar tests del Frontend (Vitest)
+
+```bash
+cd frontend
+npx vitest run
+```
+
+### Resumen de cobertura
+
+| Ámbito | Framework | Suites | Tests |
+| :--- | :--- | :--- | :--- |
+| **Backend** | Jest | 7 | 66 |
+| **Frontend** | Vitest | 1 | 14 |
+| **Total** | — | **8** | **80** |
+
+---
+
+## �🤝 Contribuir
 
 1. Fork del repositorio
 2. Crear rama (`git checkout -b feature/nueva-funcionalidad`)

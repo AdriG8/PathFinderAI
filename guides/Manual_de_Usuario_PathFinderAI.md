@@ -8,27 +8,55 @@
 
 ## Tabla de Contenidos
 
-1. [Introducción](#1-introducción)
-2. [Acceso al Sistema](#2-acceso-al-sistema)
-   - 2.1 [Registro de nueva cuenta](#21-registro-de-nueva-cuenta)
-   - 2.2 [Confirmación de email](#22-confirmación-de-email)
-   - 2.3 [Inicio de sesión](#23-inicio-de-sesión)
-   - 2.4 [Inicio de sesión con Google](#24-inicio-de-sesión-con-google)
-   - 2.5 [Recuperación de contraseña](#25-recuperación-de-contraseña)
-   - 2.6 [Cierre de sesión](#26-cierre-de-sesión)
-3. [Descripción de Funcionalidades](#3-descripción-de-funcionalidades)
-   - 3.1 [Página Principal (Dashboard)](#31-página-principal-dashboard)
-   - 3.2 [Barra Lateral (Sidebar)](#32-barra-lateral-sidebar)
-   - 3.3 [Generación de Roadmaps con IA](#33-generación-de-roadmaps-con-ia)
-   - 3.4 [Editor de Roadmap](#34-editor-de-roadmap)
-   - 3.5 [Visor de Roadmap (Solo Lectura)](#35-visor-de-roadmap-solo-lectura)
-   - 3.6 [Gestión de Recursos](#36-gestión-de-recursos)
-   - 3.7 [Exámenes de Validación con IA](#37-exámenes-de-validación-con-ia)
-   - 3.8 [Perfil de Usuario](#38-perfil-de-usuario)
-   - 3.9 [Importación y Exportación de Roadmaps](#39-importación-y-exportación-de-roadmaps)
-   - 3.10 [Panel de Administración](#310-panel-de-administración)
-4. [Flujo de Trabajo](#4-flujo-de-trabajo)
-5. [Capturas de Pantalla](#5-capturas-de-pantalla)
+- [Manual de Usuario — PathFinderAI](#manual-de-usuario--pathfinderai)
+  - [Tabla de Contenidos](#tabla-de-contenidos)
+  - [1. Introducción](#1-introducción)
+  - [2. Acceso al Sistema](#2-acceso-al-sistema)
+    - [2.1 Registro de nueva cuenta](#21-registro-de-nueva-cuenta)
+    - [2.2 Confirmación de email](#22-confirmación-de-email)
+    - [2.3 Inicio de sesión](#23-inicio-de-sesión)
+    - [2.4 Inicio de sesión con Google](#24-inicio-de-sesión-con-google)
+    - [2.5 Recuperación de contraseña](#25-recuperación-de-contraseña)
+    - [2.6 Cierre de sesión](#26-cierre-de-sesión)
+  - [3. Descripción de Funcionalidades](#3-descripción-de-funcionalidades)
+    - [3.1 Página Principal (Dashboard)](#31-página-principal-dashboard)
+    - [3.2 Barra Lateral (Sidebar)](#32-barra-lateral-sidebar)
+    - [3.3 Generación de Roadmaps con IA](#33-generación-de-roadmaps-con-ia)
+    - [3.4 Editor de Roadmap](#34-editor-de-roadmap)
+      - [A. Canvas Visual (Área central)](#a-canvas-visual-área-central)
+      - [B. Panel de Herramientas (Lado izquierdo / menú contextual)](#b-panel-de-herramientas-lado-izquierdo--menú-contextual)
+      - [C. Panel de Detalle del Nodo (Lado derecho)](#c-panel-de-detalle-del-nodo-lado-derecho)
+      - [D. Barra de Progreso del Roadmap](#d-barra-de-progreso-del-roadmap)
+      - [E. Guardado](#e-guardado)
+    - [3.5 Visor de Roadmap (Solo Lectura)](#35-visor-de-roadmap-solo-lectura)
+    - [3.6 Gestión de Recursos](#36-gestión-de-recursos)
+      - [Búsqueda automática](#búsqueda-automática)
+      - [Agregar manualmente](#agregar-manualmente)
+      - [Eliminar recursos](#eliminar-recursos)
+    - [3.7 Exámenes de Validación con IA](#37-exámenes-de-validación-con-ia)
+    - [3.8 Perfil de Usuario](#38-perfil-de-usuario)
+      - [Pestaña "Perfil"](#pestaña-perfil)
+      - [Pestaña "Seguridad"](#pestaña-seguridad)
+      - [Pestaña "Eliminar Cuenta"](#pestaña-eliminar-cuenta)
+    - [3.9 Importación y Exportación de Roadmaps](#39-importación-y-exportación-de-roadmaps)
+      - [Exportar roadmap](#exportar-roadmap)
+      - [Importar roadmap (JSON)](#importar-roadmap-json)
+    - [3.10 Panel de Administración](#310-panel-de-administración)
+      - [Estadísticas generales](#estadísticas-generales)
+      - [Tabla de temas consultados](#tabla-de-temas-consultados)
+  - [4. Flujo de Trabajo](#4-flujo-de-trabajo)
+    - [Paso a paso detallado:](#paso-a-paso-detallado)
+  - [5. Capturas de Pantalla](#5-capturas-de-pantalla)
+    - [5.1 Página de Bienvenida (sin sesión)](#51-página-de-bienvenida-sin-sesión)
+    - [5.2 Pantalla de Login](#52-pantalla-de-login)
+    - [5.3 Pantalla de Registro](#53-pantalla-de-registro)
+    - [5.4 Recuperación de Contraseña](#54-recuperación-de-contraseña)
+    - [5.5 Dashboard (con sesión)](#55-dashboard-con-sesión)
+    - [5.6 Editor de Roadmap](#56-editor-de-roadmap)
+    - [5.7 Panel de Detalle de Nodo](#57-panel-de-detalle-de-nodo)
+    - [5.8 Examen de Validación](#58-examen-de-validación)
+    - [5.9 Perfil de Usuario](#59-perfil-de-usuario)
+    - [5.10 Panel de Administración](#510-panel-de-administración)
 
 ---
 
@@ -163,12 +191,12 @@ El Dashboard es la pantalla central de la aplicación. Desde aquí el usuario pu
 | Elemento | Descripción |
 |----------|-------------|
 | Campo de búsqueda central | Área para introducir el tema a aprender |
-| Botón "Generar con IA" | Inicia la generación del roadmap |
+| Botón de envío (avión de papel) | Inicia la generación del roadmap a partir del texto introducido |
 | Sugerencias rápidas | Botones con temas predefinidos (ej: *Física Cuántica*, *Desarrollo con IA*, *Historia del Arte*, *Estrategia de Negocios*) |
 | Barra lateral (Sidebar) | Navegación y gestión de roadmaps |
 | Aviso inferior | Recordatorio de que la IA puede cometer errores |
 
-**Captura — Dashboard / Página Principal (sin sesión):**
+**Captura — Dashboard / Página Principal (con sesión iniciada):**
 
 ![Dashboard](capturas/dashboard.png)
 
@@ -215,7 +243,7 @@ La sidebar aparece en el lado izquierdo y contiene:
 El proceso de generación funciona así:
 
 1. El usuario escribe un tema en el campo de búsqueda (ej: *"electricidad"*, *"quiero aprender a coser"*).
-2. Hace clic en **"Generar con IA"** (o pulsa Enter).
+2. Hace clic en el **botón de envío** (icono de avión de papel) o pulsa **Enter**.
 3. Se muestra una **barra de progreso** con mensajes de estado:
    - *"Analizando tema..."*
    - *"Creando estructura..."*
@@ -304,7 +332,7 @@ Al hacer clic en un nodo, se abre un panel lateral con:
 | **Horas estimadas** | Tiempo estimado para completar el concepto |
 | **Notas** | Campo de texto libre para anotaciones personales |
 | **Recursos/Enlaces** | Lista de recursos asociados (YouTube, Wikipedia, enlaces manuales) |
-| **Validar conocimiento** | Botón para iniciar un examen tipo test generado con IA |
+| **Validar conocimiento (“Aprendido”)** | Al cambiar el estado de un nodo a *✓ Aprendido* desde el selector del panel, se lanza automáticamente un examen tipo test generado con IA |
 
 #### D. Barra de Progreso del Roadmap
 
@@ -381,7 +409,7 @@ Cada nodo puede tener recursos educativos asociados:
 
 PathFinderAI permite validar el conocimiento adquirido en cada nodo mediante exámenes generados con IA:
 
-1. Seleccione un nodo y haga clic en **"Validar conocimiento"** en el panel lateral.
+1. Seleccione un nodo y, en el panel lateral, cambie el campo **ESTADO** a **“✓ Aprendido”**. Esto inicia automáticamente el examen.
 2. Se abre un **modal de examen** con una barra de progreso mientras la IA genera las preguntas.
 3. El examen consiste en **3 preguntas tipo test**:
    - Cada pregunta tiene **4 opciones** (a, b, c, d).
@@ -549,12 +577,12 @@ A continuación se describe el flujo de trabajo típico de un usuario en PathFin
 2. **Confirme su email** haciendo clic en el enlace recibido por correo.
 3. **Inicie sesión** con sus credenciales o con Google.
 4. En el **Dashboard**, escriba el tema que desea aprender (ej: *"Electricidad"*).
-5. Haga clic en **"Generar con IA"** y espere a que se genere el roadmap.
+5. Pulse el **botón de envío** (icono de avión de papel) o **Enter** y espere a que se genere el roadmap.
 6. El **Editor de Roadmap** se abrirá automáticamente con el grafo generado.
 7. **Explore los nodos** haciendo clic sobre cada concepto para ver sus detalles.
 8. **Busque recursos** (vídeos de YouTube, artículos de Wikipedia) para cada nodo.
 9. **Estudie** los recursos y cambie el estado del nodo a *"Estudiando"*.
-10. Cuando se sienta preparado, haga clic en **"Validar conocimiento"** para realizar un examen.
+10. Cuando se sienta preparado, cambie el **ESTADO** del nodo a *“✓ Aprendido”* para iniciar el examen automáticamente.
 11. Si **aprueba** el examen (≥70%), el nodo se marcará como *"Aprendido"*.
 12. **Repita** el proceso con el siguiente nodo siguiendo el orden sugerido por las conexiones.
 13. **Guarde** su progreso periódicamente con el botón "Guardar".
@@ -568,9 +596,9 @@ A continuación se presenta un resumen visual de las pantallas principales de Pa
 
 ### 5.1 Página de Bienvenida (sin sesión)
 
-La página de inicio muestra el logo de PathFinderAI, un campo de búsqueda central con la pregunta *"¿Qué quieres aprender hoy?"*, sugerencias rápidas de temas, y botones para iniciar sesión o registrarse.
+Al acceder a la URL raíz sin haber iniciado sesión, la aplicación redirige automáticamente a la pantalla de **Login**, que actúa como página de entrada. Muestra el logo y el nombre de PathFinderAI, el formulario de acceso y opciones para registrarse o iniciar sesión con Google.
 
-> **Elementos:** Logo, campo de búsqueda, 4 sugerencias (Física Cuántica, Desarrollo con IA, Historia del Arte, Estrategia de Negocios), botones INICIAR SESIÓN y REGISTRARSE, aviso de IA.
+> **Elementos:** Logo de PathFinderAI, título “Bienvenido de nuevo”, campos Email y Contraseña, botón *“Mostrar contraseña”*, enlace *“¿Olvidaste tu contraseña?”*, botón de inicio de sesión con **Google**, botón principal **“Iniciar sesión”** y enlace a **“Regístrate”**. En el pie de página aparecen los enlaces Privacy Policy, Terms of Service y Contact Support.
 
 ![Página de bienvenida](capturas/bienvenida.png)
 
@@ -608,7 +636,7 @@ Formulario simple con campo de email y botón para enviar instrucciones de recup
 
 ### 5.5 Dashboard (con sesión)
 
-Vista principal con la sidebar abierta mostrando los roadmaps guardados del usuario, y el área central con el campo de búsqueda para generar nuevos roadmaps.
+Vista principal tras iniciar sesión. La **barra lateral izquierda** aparece colapsada por defecto mostrando solo iconos (los planos de cada roadmap guardado y el avatar del usuario en la parte inferior). Al pasar el ratón por encima, la sidebar se despliega mostrando los nombres completos de cada roadmap. En el centro se muestra la pregunta *“¿Qué quieres aprender hoy?”*, una breve descripción, **cuatro chips de sugerencias** (“Quiero aprender Física Cuántica”, “Desarrollo con IA”, “Historia del Arte”, “Estrategia de Negocios”) y el **campo de búsqueda/generación** con el placeholder *“Pregunta cualquier cosa…”* y un botón de envío en forma de avión de papel. El pie incluye el aviso: *“PATHFINDER AI PUEDE COMETER ERRORES. CONSIDERA VERIFICAR LA INFORMACIÓN IMPORTANTE.”*
 
 ![Dashboard con sesión](capturas/dashboard-sesion.png)
 
@@ -616,7 +644,7 @@ Vista principal con la sidebar abierta mostrando los roadmaps guardados del usua
 
 ### 5.6 Editor de Roadmap
 
-Vista del editor mostrando un grafo interactivo con nodos conectados por aristas. Cada nodo tiene un borde de color según su estado. El panel lateral derecho muestra los detalles del nodo seleccionado.
+Vista del editor mostrando el grafo jerárquico del roadmap *“electricidad”* con 13 nodos conectados (1. Introducción a la Electricidad, 2. Carga Eléctrica, 3. Corriente Eléctrica, 4. Voltaje, 5. Resistencia, 6. Ley de Ohm, etc.). En la esquina superior izquierda hay un botón **“Herramientas”** (menú desplegable con Añadir nodo, Organizar, Exportar, Guardar, Modo Lectura, Eliminar, Color). En la parte superior derecha se muestran las instrucciones: *“Click para seleccionar • Doble click para editar • Delete para eliminar”*. En la zona inferior central aparece el resumen de progreso (**0% Progreso, 0 Completados, 0 En proceso, 13 Pendientes, 30h Restantes**). En la esquina inferior izquierda hay controles de zoom y un mini-mapa en la esquina inferior derecha.
 
 ![Editor de Roadmap](capturas/editor-roadmap.png)
 
@@ -624,7 +652,14 @@ Vista del editor mostrando un grafo interactivo con nodos conectados por aristas
 
 ### 5.7 Panel de Detalle de Nodo
 
-Panel lateral que muestra: título del nodo, selector de estado (Pendiente/Estudiando/Aprendido), horas estimadas, notas personales, recursos vinculados y botón de validar conocimiento.
+Al hacer click en un nodo se abre un panel deslizante en el lateral derecho con la información del concepto. Para el nodo *“1. Introducción a la Electricidad”* se muestra:
+
+- **Título del nodo** y botón de cierre (✕).
+- **ESTADO**: selector desplegable con tres opciones — *○ Pendiente*, *⏳ Estudiando*, *✓ Aprendido*. Al elegir **“Aprendido”** se lanza automáticamente el modal de examen de validación.
+- **HORAS ESTIMADAS**: campo numérico editable.
+- **RECURSOS**: lista de enlaces vinculados al nodo más un botón **“Buscar recursos”** (búsqueda automática en YouTube/Wikipedia).
+- **AÑADIR RECURSO**: campos *Título del recurso*, *URL del recurso* y botón **“+ Añadir recurso”**.
+- **NOTAS**: área de texto libre con el placeholder *“Añade tus notas personales…”*.
 
 ![Panel de nodo](capturas/panel-nodo.png)
 
@@ -632,7 +667,9 @@ Panel lateral que muestra: título del nodo, selector de estado (Pendiente/Estud
 
 ### 5.8 Examen de Validación
 
-Modal de examen con pregunta tipo test, 4 opciones de respuesta, barra de progreso indicando la pregunta actual (1/3, 2/3, 3/3), y resultado al finalizar.
+Al cambiar el estado de un nodo a **“Aprendido”** se abre un **modal centrado** titulado *“Examen”* (con un icono de medalla a la izquierda) que muestra debajo el nombre del nodo evaluado (ej.: *“1. Introducción a la Electricidad”*). Mientras Gemini genera las preguntas se muestra un **spinner circular** y los mensajes *“Preparando preguntas…”* y *“Esto puede tardar unos segundos”* sobre una barra de progreso. Cuando el examen está listo, el modal muestra **3 preguntas tipo test** con 4 opciones (A, B, C, D), el contador *Pregunta X de 3*, los botones **“Confirmar respuesta”** y **“Siguiente pregunta”**, y al finalizar el resultado con la explicación de cada respuesta correcta. Si el porcentaje de acierto es ≥ 70 %, el nodo queda marcado como **Aprendido**.
+
+> **Nota:** La captura muestra la fase inicial de carga (*Preparando preguntas…*) porque la generación de preguntas depende de la respuesta del modelo de IA y puede tardar varios segundos.
 
 ![Examen](capturas/examen.png)
 
@@ -640,7 +677,11 @@ Modal de examen con pregunta tipo test, 4 opciones de respuesta, barra de progre
 
 ### 5.9 Perfil de Usuario
 
-Modal de perfil con tres pestañas: Perfil (nombre, apellidos, nivel), Seguridad (cambio de contraseña) y Eliminar Cuenta.
+Modal **“Mi Perfil”** centrado sobre el dashboard con tres pestañas superiores:
+
+- **Perfil**: campos *Nombre*, *Apellidos*, *Email* (no editable, con la nota *“El email no se puede cambiar”*) y *Nivel de aprendizaje* (selector con Principiante, Intermedio, Avanzado). Botón inferior **“Guardar cambios”**.
+- **Seguridad**: formulario para cambiar la contraseña actual.
+- **Eliminar**: opción para eliminar definitivamente la cuenta.
 
 ![Perfil](capturas/perfil.png)
 
@@ -648,7 +689,9 @@ Modal de perfil con tres pestañas: Perfil (nombre, apellidos, nivel), Seguridad
 
 ### 5.10 Panel de Administración
 
-Panel con métricas: total de usuarios, total de roadmaps, gráfico de tendencia de registros (últimos 30 días), y tabla de temas consultados.
+Página accesible únicamente para cuentas con rol **admin**. Muestra un encabezado con botón **“← Volver”**, el título *“Panel de Administración”* y la descripción *“Monitoreo y análisis de la plataforma PathFinderAI”*. A continuación se exhiben dos **tarjetas de métricas** (*Usuarios Registrados* y *Mapas Generados*) y un panel con la *Tendencia de Usuarios Registrados — Crecimiento en los últimos 30 días*.
+
+> **Nota de seguridad:** Si un usuario sin rol de administrador intenta acceder a la ruta `/admin`, verá el mensaje **“Acceso denegado. Solo administradores.”** y las métricas aparecerán vacías (0) tal como se muestra en la captura.
 
 ![Admin](capturas/admin.png)
 

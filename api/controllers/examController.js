@@ -81,7 +81,7 @@ Devuelve SOLO JSON valido (sin texto adicional ni markdown):
 
     // Genera el contenido usando Gemini
     const interaction = await ai.interactions.create({
-      model: 'gemini-2.5-flash-lite',
+      model: 'gemini-3.5-flash',
       input: examPrompt,
     });
 
