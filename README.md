@@ -176,29 +176,34 @@ PathFinderAI/
 ├── 📂 api/                          # Backend Express.js
 │   ├── 📂 controllers/               # Controladores de endpoints
 │   │   ├── adminController.js        # Estadísticas del admin
-│   │   ├── examController.js        # Generación de exámenes con IA
-│   │   ├── generateController.js    # Generación de roadmaps con IA
-│   │   ├── metricsController.js     # Métricas de uso
-│   │   ├── roadmapController.js     # CRUD de roadmaps
-│   │   ├── simpleSearchController.js # Búsqueda de recursos
-│   │   └── userController.js        # Autenticación y perfiles
-│   ├── 📂 models/                   # Modelos de datos
+│   │   ├── examController.js         # Generación de exámenes con IA
+│   │   ├── generateController.js     # Generación de roadmaps con IA
+│   │   ├── metricsController.js      # Métricas de uso
+│   │   ├── roadmapController.js      # CRUD de roadmaps
+│   │   ├── simpleSearchController.js # Búsqueda de recursos (YouTube + Wikipedia)
+│   │   └── userController.js         # Autenticación y perfiles
+│   ├── 📂 models/                    # Modelos de datos
 │   │   ├── database.js              # Configuración de Supabase
-│   │   ├── metricModel.js          # Modelo de métricas
-│   │   ├── roadmapModel.js         # Modelo de roadmaps
+│   │   ├── metricModel.js           # Modelo de métricas
+│   │   ├── roadmapModel.js          # Modelo de roadmaps
 │   │   └── userModel.js             # Modelo de usuarios
-│   ├── index.js                    # Punto de entrada
+│   ├── 📂 tests/                    # Tests unitarios y de integración
+│   ├── 📂 emails/                   # Plantillas de emails
+│   ├── index.js                     # Punto de entrada
 │   ├── package.json
+│   ├── jest.config.js               # Configuración de Jest
+│   ├── .env.example                 # Ejemplo de variables de entorno
+│   ├── .gitignore
 │   └── API_backend.md               # Documentación de endpoints
 │
 ├── 📂 frontend/                      # Aplicación React
 │   ├── 📂 src/
 │   │   ├── 📂 components/           # Componentes UI
-│   │   │   ├── ExamModal.tsx       # Modal de examen
-│   │   │   ├── Footer.tsx          # Pie de página
-│   │   │   ├── PageTransition.tsx  # Transición de páginas
+│   │   │   ├── ExamModal.tsx        # Modal de examen
+│   │   │   ├── Footer.tsx           # Pie de página
+│   │   │   ├── PageTransition.tsx   # Transición de páginas
 │   │   │   ├── ProfileModal.tsx     # Modal de perfil
-│   │   │   ├── ProtectedRoute.tsx  # Ruta protegida
+│   │   │   ├── ProtectedRoute.tsx   # Ruta protegida
 │   │   │   ├── RoadmapEditor.tsx    # Editor de grafos con React Flow
 │   │   │   ├── ScrollToTop.tsx      # Scroll automático
 │   │   │   ├── Sidebar.tsx          # Barra lateral
@@ -213,42 +218,57 @@ PathFinderAI/
 │   │   ├── 📂 lib/                  # Utilidades
 │   │   │   ├── client.ts           # Cliente Supabase
 │   │   │   ├── server.ts           # Servidor Supabase
-│   │   │   └── utils.ts             # Funciones utilitarias
+│   │   │   └── utils.ts            # Funciones utilitarias
 │   │   ├── 📂 pages/                # Páginas/Rutas
-│   │   │   ├── AdminPage.tsx       # Panel de administración
+│   │   │   ├── AdminPage.tsx        # Panel de administración
 │   │   │   ├── AuthCallback.tsx     # Callback de autenticación
 │   │   │   ├── ConfirmEmail.tsx     # Confirmación de email
-│   │   │   ├── EmailConfirmed.tsx    # Email confirmado
-│   │   │   ├── ForgotPassword.tsx    # Recuperar contraseña
+│   │   │   ├── EmailConfirmed.tsx   # Email confirmado
+│   │   │   ├── ForgotPassword.tsx   # Recuperar contraseña
 │   │   │   ├── Login.tsx            # Página de login
 │   │   │   ├── MainPage.tsx         # Página principal
-│   │   │   ├── Register.tsx          # Página de registro
+│   │   │   ├── Register.tsx         # Página de registro
 │   │   │   ├── ResetPassword.tsx    # Restablecer contraseña
 │   │   │   ├── RoadmapEditorPage.tsx # Editor de roadmap
 │   │   │   └── RoadmapViewerPage.tsx # Visor de roadmap
+│   │   ├── 📂 tests/                # Tests unitarios (Vitest)
 │   │   ├── 📂 types/                # Definiciones TypeScript
-│   │   │   └── google.d.ts          # Tipos de Google OAuth
+│   │   │   └── google.d.ts         # Tipos de Google OAuth
 │   │   ├── 📂 utils/                # Utilidades
-│   │   │   ├── googleAuth.ts        # Utilidad de autenticación Google
-│   │   │   └── sanitize.ts          # Funciones de sanitización
+│   │   │   ├── googleAuth.ts       # Utilidad de autenticación Google
+│   │   │   └── sanitize.ts         # Funciones de sanitización
 │   │   ├── App.tsx                  # Componente principal
 │   │   ├── main.tsx                 # Punto de entrada
 │   │   └── index.css                # Estilos globales
-│   ├── public/                       # Archivos públicos
+│   ├── 📂 public/                   # Archivos públicos
 │   ├── package.json
 │   ├── vite.config.ts               # Configuración de Vite
+│   ├── vitest.config.ts             # Configuración de Vitest
 │   ├── tailwind.config.js           # Configuración de Tailwind
+│   ├── tsconfig.json                # Configuración de TypeScript
+│   ├── tsconfig.app.json
+│   ├── tsconfig.node.json
+│   ├── postcss.config.cjs           # Configuración de PostCSS
+│   ├── eslint.config.js             # Configuración de ESLint
+│   ├── components.json              # Configuración de shadcn/ui
+│   ├── .env.example                 # Ejemplo de variables de entorno
+│   ├── .gitignore
 │   └── vercel.json                  # Configuración de Vercel
 │
-├── 📂 docs/                          # Documentación
-│   └── API_backend.md               # Documentación de endpoints
+├── 📂 guides/                        # Manuales de instalación y uso
+│   ├── Manual_de_Instalacion_PathFinderAI.md
+│   ├── Manual_de_Instalacion_PathFinderAI.pdf
+│   ├── Manual_de_Usuario_PathFinderAI.md
+│   ├── Manual_de_Usuario_PathFinderAI.pdf
+│   ├── 📂 capturas/                  # Capturas del manual de usuario
+│   └── 📂 capturas-instacion/        # Capturas del manual de instalación
 │
-├── 📂 .github/                      # Configuración de GitHub
-│   └── workflows/                   # Acciones de GitHub (vacío)
+├── .github/                          # Configuración de GitHub
+│   └── workflows/                    # Acciones de GitHub
 │
 ├── Script_SQL_PathFinderAI.sql       # Script de base de datos
 ├── README.md                        # Este archivo
-└── package.json                    # Workspace root (opcional)
+└── .gitignore
 ```
 ---
 
@@ -321,7 +341,7 @@ PathFinderAI/
 
 ### 3. Buscar Recursos
 - Selecciona un nodo
-- Pulsa "Wiki+YT" para obtener enlaces de Wikipedia y YouTube
+- Pulsa "Buscar recursos" para obtener enlaces de YouTube y Wikipedia
 
 ### 4. Completar Nodos
 - Cuando estudies un tema, marca como "En estudio"

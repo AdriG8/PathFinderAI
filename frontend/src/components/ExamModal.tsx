@@ -52,8 +52,16 @@ export default function ExamModal({ isOpen, onClose, topic, onPass }: ExamModalP
 
   // Efecto para generar el examen cuando se abre el modal
   useEffect(() => {
+    let messageInterval: ReturnType<typeof setInterval> | null = null
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+
     if (isOpen && topic) {
       generateExam()
+    }
+
+    return () => {
+      if (messageInterval) clearInterval(messageInterval)
+      if (timeoutId) clearTimeout(timeoutId)
     }
   }, [isOpen, topic])
 

@@ -7,12 +7,18 @@ const searchResources = async (req, res) => {
       return res.status(400).json({ error: 'El tema es requerido' });
     }
 
+    // Limitar longitud del topic (máximo 200 caracteres)
+    const safeTopic = String(topic).trim().substring(0, 200);
+    if (!safeTopic) {
+      return res.status(400).json({ error: 'El tema es requerido' });
+    }
+
     const results = [];
     const API_KEY_YT = process.env.API_KEY_YT_SEARCH;
 
     if (API_KEY_YT) {
       try {
-        const ytQuery = encodeURIComponent(topic);
+        const ytQuery = encodeURIComponent(safeTopic);
         const ytUrl = 'https://www.googleapis.com/youtube/v3/search?part=snippet&q=' + ytQuery + '&type=video&maxResults=3&key=' + API_KEY_YT;
 
         const ytResponse = await fetch(ytUrl);
@@ -35,16 +41,16 @@ const searchResources = async (req, res) => {
         console.log('Error YouTube API:', ytError.message);
       }
     } else {
-      const ytFallbackUrl = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(topic);
+      const ytFallbackUrl = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(safeTopic);
       results.push({
-        title: 'Buscar videos en YouTube: ' + topic,
+        title: 'Buscar videos en YouTube: ' + safeTopic,
         url: ytFallbackUrl,
         type: 'video'
       });
     }
 
     try {
-      const wikiQuery = encodeURIComponent(topic);
+      const wikiQuery = encodeURIComponent(safeTopic);
       const wikiUrl = 'https://en.wikipedia.org/w/api.php?action=opensearch&search=' + wikiQuery + '&limit=3&format=json&origin=*';
 
       const wikiResponse = await fetch(wikiUrl);

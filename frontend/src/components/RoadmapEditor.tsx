@@ -279,9 +279,25 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
   // Añadir recurso
   const addResource = useCallback(() => {
     if (!newResourceUrl.trim() || !newResourceTitle.trim() || !clickedNode) return
-    const newEnlace = { title: newResourceTitle, url: newResourceUrl, type: 'documentacion' }
+
+    // Sanitizar URL: solo permitir http y https
+    let safeUrl = newResourceUrl.trim()
+    try {
+      const url = new URL(safeUrl)
+      if (!['http:', 'https:'].includes(url.protocol)) return
+      safeUrl = url.toString()
+    } catch {
+      return
+    }
+
+    // Sanitizar título: eliminar HTML/scripts
+    const safeTitle = newResourceTitle.trim()
+      .replace(/<[^>]*>/g, '')
+      .substring(0, 200)
+
+    const newEnlace = { title: safeTitle, url: safeUrl, type: 'documentacion' }
     const currentResources = clickedNode.data.resources?.enlaces || []
-    
+
     setNodes((nds) =>
       nds.map((node) =>
         node.id === clickedNode.id
@@ -289,7 +305,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
           : node
       )
     )
-    
+
     setClickedNode((prev) => prev ? { ...prev, data: { ...prev.data, resources: { enlaces: [...currentResources, newEnlace] } } } : null)
     setNewResourceUrl('')
     setNewResourceTitle('')
@@ -551,8 +567,12 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
       setIsExporting(true)
       setTimeout(async () => {
         const html2canvas = (await import('html2canvas')).default
-        if (flowInstance) flowInstance.fitView({ padding: 0.2, duration: 300 })
-        await new Promise((resolve) => setTimeout(resolve, 350))
+        if (flowInstance) {
+          flowInstance.fitView({ padding: 0.1, duration: 300 })
+          await new Promise((resolve) => setTimeout(resolve, 200))
+          flowInstance.zoomTo(0.7, { duration: 200 })
+          await new Promise((resolve) => setTimeout(resolve, 250))
+        }
         const flowElement = document.querySelector('.react-flow') as HTMLElement
         if (flowElement) {
           const canvas = await html2canvas(flowElement, { backgroundColor: '#1a1a2e', scale: 2, useCORS: true, allowTaint: true })
@@ -598,7 +618,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
 
   // Abrir modo lectura
   const openReadOnlyMode = useCallback(() => {
-    const currentMapId = mapId || `map_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    const currentMapId = mapId || `map_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
     const data = { nodes: nodes.map((n) => ({ id: n.id, type: n.type, position: n.position, data: n.data })), edges: edges.map((e: Edge) => ({ id: e.id, source: e.source, target: e.target, animated: e.animated })) }
     sessionStorage.setItem(currentMapId, JSON.stringify(data))
     window.open(`/roadmap-viewer?id=${currentMapId}`, '_blank')
@@ -953,7 +973,7 @@ export default function RoadmapEditor({ initialData, readOnly = false, mapId, on
           {/* Header con color del nodo */}
           <div className="p-4 pb-3" style={{ borderBottom: `3px solid ${clickedNode.data.color || getStatusColor(clickedNode.data.status)}` }}>
             <div className="flex justify-between items-start gap-2">
-              <h2 className="text-lg font-bold leading-tight" style={{ color: 'var(--color-on-surface)' }}>{clickedNode.data.label}</h2>
+              <h2 className="text-lg font-bold leading-tight line-clamp-2 break-words" style={{ color: 'var(--color-on-surface)' }}>{clickedNode.data.label}</h2>
               <button onClick={closePanel} aria-label="Cerrar panel" className="p-1.5 rounded-full transition-colors hover:bg-opacity-20" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface-variant)' }}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

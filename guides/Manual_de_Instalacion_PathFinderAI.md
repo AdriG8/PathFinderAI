@@ -45,6 +45,7 @@ PathFinderAI depende de tres servicios externos. Cree una cuenta gratuita en cad
 | **Supabase** | Base de datos PostgreSQL y autenticación | <https://supabase.com> |
 | **Google Cloud** | OAuth 2.0 (inicio de sesión con Google) | <https://console.cloud.google.com/> |
 | **Google AI Studio** | Clave de API para Gemini | <https://makersuite.google.com/app/apikey> |
+| **Google Cloud** | API Key para YouTube Data API v3 | <https://console.cloud.google.com/> |
 
 **Captura 1.2** — Pantalla principal de Supabase tras iniciar sesión:
 
@@ -152,7 +153,25 @@ PathFinderAI se compone de **dos subproyectos**: una API en Node.js (`api/`) y u
 
 ![Clave Gemini generada](capturas-instacion/2-creacion-de-api-key.png)
 
-### 2.4. Configurar la API (`api/.env`)
+### 2.4. Obtener la clave de YouTube Data API
+
+1. Acceda a <https://console.cloud.google.com/> y seleccione el mismo proyecto usado para OAuth.
+2. Vaya a **APIs y servicios → Biblioteca**.
+3. Busque **YouTube Data API v3** y haga clic en **Habilitar**.
+4. Una vez habilitada, vaya a **APIs y servicios → Credenciales**.
+5. Pulse **+ Crear credenciales → Clave de API**.
+6. Copie la clave generada — corresponde a `API_KEY_YT_SEARCH`.
+7. (Opcional pero recomendado) Restrinja la clave: en la edición de la clave, en **Restricciones de API**, seleccione **YouTube Data API v3**.
+
+**Captura 2.7** — YouTube Data API v3 habilitada en Google Cloud:
+
+![Habilitar YouTube API](capturas-instacion/habilitar-youtube-api.png)
+
+**Captura 2.7 (bis)** — Creación de la clave de API para YouTube:
+
+![Crear API Key YouTube](capturas-instacion/crear-api-key-youtube.png)
+
+### 2.5. Configurar la API (`api/.env`)
 
 ```bash
 cd api
@@ -172,17 +191,20 @@ GEMINI_API_KEY=tu-gemini-api-key
 
 # URL del frontend
 SITE_URL=http://localhost:5173
+
+# YouTube Data API
+API_KEY_YT_SEARCH=tu-youtube-api-key
 ```
 
-**Captura 2.7** — Terminal mostrando el `npm install` completado dentro de `api/`:
+**Captura 2.8** — Terminal mostrando el `npm install` completado dentro de `api/`:
 
 ![npm install api](capturas-instacion/npmI-api.png)
 
-**Captura 2.8** — Archivo `api/.env` abierto en VS Code con las variables rellenadas:
+**Captura 2.9** — Archivo `api/.env` abierto en VS Code con las variables rellenadas:
 
 ![Archivo .env de la API](capturas-instacion/env-api.png)
 
-### 2.5. Configurar el frontend (`frontend/.env`)
+### 2.6. Configurar el frontend (`frontend/.env`)
 
 En otra terminal:
 
@@ -200,11 +222,11 @@ VITE_SUPABASE_ANON_KEY=tu-anon-key
 VITE_GOOGLE_CLIENT_ID=tu-google-client-id.apps.googleusercontent.com
 ```
 
-**Captura 2.9** — Terminal mostrando el `npm install` completado dentro de `frontend/`:
+**Captura 2.10** — Terminal mostrando el `npm install` completado dentro de `frontend/`:
 
 ![npm install frontend](capturas-instacion/npmI-frontend.png)
 
-**Captura 2.10** — Archivo `frontend/.env` abierto en VS Code con las variables rellenadas:
+**Captura 2.11** — Archivo `frontend/.env` abierto en VS Code con las variables rellenadas:
 
 ![Archivo .env del frontend](capturas-instacion/env-frontend.png)
 
@@ -377,9 +399,6 @@ Para confirmar que la instalación es correcta, realice esta lista de comprobaci
 
 ![Roadmap generado](capturas-instacion/roadmap-generado.png)
 
-**Captura 5.4** — Registro insertado en la tabla `Roadmap` de Supabase:
-
-![Fila en tabla Roadmap](capturas-instacion/supabase-row.png)
 
 ---
 

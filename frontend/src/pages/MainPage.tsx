@@ -160,7 +160,7 @@ export default function MainPage() {
         // Parsea el JSON
         const json = JSON.parse(e.target?.result as string)
         // Genera un ID único
-        const mapId = `map_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        const mapId = `map_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
         
         // Guarda en sessionStorage
         sessionStorage.setItem(mapId, JSON.stringify(json))
@@ -398,7 +398,7 @@ export default function MainPage() {
           throw new Error('No se pudo obtener el ID del roadmap guardado')
         }
       } else {
-        const mapId = `map_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        const mapId = `map_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
         sessionStorage.setItem(mapId, JSON.stringify(generatedData))
         openRoadmap(mapId)
       }
