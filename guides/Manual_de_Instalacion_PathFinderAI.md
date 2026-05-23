@@ -139,21 +139,80 @@ PathFinderAI se compone de **dos subproyectos**: una API en Node.js (`api/`) y u
 
 ![Configuración del provider en Supabase](capturas-instacion/6-credenciales-auth2-config-supabase.png)
 
-### 2.3. Obtener la clave de Gemini
+### 2.3. Configurar plantillas de correo electrónico en Supabase
+
+PathFinderAI utiliza **correos electrónicos transaccionales** para que los usuarios puedan confirmar su cuenta y restablecer su contraseña. Supabase ofrece un servicio SMTP integrado que puede usar un proveedor externo (SendGrid, Resend, Mailgun, etc.) o el propio sistema de correo de Supabase.
+
+El repositorio incluye dos plantillas HTML personalizadas en la carpeta `api/emails/`:
+
+| Archivo | Propósito |
+| :--- | :--- |
+| `api/emails/confirm-email.html` | Confirmación de registro |
+| `api/emails/reset-password.html` | Restablecimiento de contraseña |
+
+Siga estos pasos para configurarlas:
+
+1. En el dashboard de Supabase, vaya a **Authentication → Emails Templates** (o acceda directamente a `https://supabase.com/dashboard/project/[PROJECT_REF]/auth/templates`, reemplazando `[PROJECT_REF]` con el identificador de su proyecto).
+2. Verá las plantillas disponibles. Pulse **Confirm signup** (Confirmar registro).
+3. Cambie el **Subject** a: `Confirma tu email - PathFinderAI`.
+4. En el editor de HTML, seleccione todo el contenido existente y péguelo.
+5. Abra el archivo `api/emails/confirm-email.html` del repositorio, copie su contenido completo y péguelo en el editor de Supabase.
+6. Pulse **Save**.
+7. Repita el mismo proceso para **Reset Password**:
+   - **Subject**: `Recupera tu contraseña - PathFinderAI`.
+   - Pegue el contenido de `api/emails/reset-password.html`.
+8. Pulse **Save**.
+
+> **Importante**: Las plantillas usan el variable `{{ .ConfirmationURL }}` que Supabase reemplaza automáticamente con el enlace mágico. No modifique esta variable.
+
+**Captura 2.6** — Sección **Authentication → Emails Templates** en Supabase:
+
+![Emails Templates en Supabase](capturas-instacion/supabase-emails-templates.png)
+
+**Captura 2.7** — Plantilla **Confirm signup** con el HTML de `confirm-email.html` pegado:
+
+![Template confirmación email](capturas-instacion/supabase-template-confirm.png)
+
+**Captura 2.8** — Plantilla **Reset Password** con el HTML de `reset-password.html` pegado:
+
+![Template reset contraseña](capturas-instacion/supabase-template-reset.png)
+
+### 2.3.1. Configurar URL de redirección para correos
+
+Para que los enlaces de confirmación y reseteo de contraseña redirijan correctamente a la aplicación, debe configurar las URLs en **Authentication → Settings → URL Configuration** (o acceda directamente a `https://supabase.com/dashboard/project/[PROJECT_REF]/auth/settings`):
+
+| Campo | Valor para desarrollo | Descripción |
+| :--- | :--- | :--- |
+| **Site URL** | `http://localhost:5173` | URL de la aplicación a la que redirigir tras confirmar el email |
+| **Redirect URLs** | `http://localhost:5173/**` | URLs permitidas para redirección después de autenticación (acepta comodines `*`) |
+
+1. En **Site URL**, introduzca `http://localhost:5173`.
+2. En **Redirect URLs**, añada `http://localhost:5173/**`.
+3. Pulse **Save**.
+
+Para un despliegue en producción, sustituya `http://localhost:5173` por la URL real del frontend (p. ej. `https://pathfinderai.tudominio.com`).
+
+**Captura 2.9** — Sección **URL Configuration** en **Authentication → Settings** de Supabase:
+
+![URL Configuration Supabase](capturas-instacion/supabase-url-configuration.png)
+
+> **Nota sobre SMTP**: Si desea usar un remitente personalizado en lugar del correo por defecto de Supabase (`noreply@app.supabase.io`), configure un proveedor SMTP externo en el mismo **Authentication → Settings → SMTP Settings**. Puede usar SendGrid, Resend o cualquier otro servicio que ofrezca envío de correos transaccionales. Esta configuración es opcional para el funcionamiento básico.
+
+### 2.4. Obtener la clave de Gemini
 
 1. Acceda a <https://makersuite.google.com/app/apikey>.
 2. Pulse **Create API key** y seleccione el proyecto de Google Cloud creado anteriormente.
 3. Copie la clave generada — corresponde a `GEMINI_API_KEY`.
 
-**Captura 2.6** — Botón **Create API key** en Google AI Studio:
+**Captura 2.10** — Botón **Create API key** en Google AI Studio:
 
 ![Crear API key Gemini](capturas-instacion/crear-api-key-gemini.png)
 
-**Captura 2.6 (bis)** — Clave de API recién generada:
+**Captura 2.10 (bis)** — Clave de API recién generada:
 
 ![Clave Gemini generada](capturas-instacion/2-creacion-de-api-key.png)
 
-### 2.4. Obtener la clave de YouTube Data API
+### 2.5. Obtener la clave de YouTube Data API
 
 1. Acceda a <https://console.cloud.google.com/> y seleccione el mismo proyecto usado para OAuth.
 2. Vaya a **APIs y servicios → Biblioteca**.
@@ -163,15 +222,15 @@ PathFinderAI se compone de **dos subproyectos**: una API en Node.js (`api/`) y u
 6. Copie la clave generada — corresponde a `API_KEY_YT_SEARCH`.
 7. (Opcional pero recomendado) Restrinja la clave: en la edición de la clave, en **Restricciones de API**, seleccione **YouTube Data API v3**.
 
-**Captura 2.7** — YouTube Data API v3 habilitada en Google Cloud:
+**Captura 2.11** — YouTube Data API v3 habilitada en Google Cloud:
 
 ![Habilitar YouTube API](capturas-instacion/habilitar-youtube-api.png)
 
-**Captura 2.7 (bis)** — Creación de la clave de API para YouTube:
+**Captura 2.11 (bis)** — Creación de la clave de API para YouTube:
 
 ![Crear API Key YouTube](capturas-instacion/crear-api-key-youtube.png)
 
-### 2.5. Configurar la API (`api/.env`)
+### 2.6. Configurar la API (`api/.env`)
 
 ```bash
 cd api
@@ -196,15 +255,15 @@ SITE_URL=http://localhost:5173
 API_KEY_YT_SEARCH=tu-youtube-api-key
 ```
 
-**Captura 2.8** — Terminal mostrando el `npm install` completado dentro de `api/`:
+**Captura 2.12** — Terminal mostrando el `npm install` completado dentro de `api/`:
 
 ![npm install api](capturas-instacion/npmI-api.png)
 
-**Captura 2.9** — Archivo `api/.env` abierto en VS Code con las variables rellenadas:
+**Captura 2.13** — Archivo `api/.env` abierto en VS Code con las variables rellenadas:
 
 ![Archivo .env de la API](capturas-instacion/env-api.png)
 
-### 2.6. Configurar el frontend (`frontend/.env`)
+### 2.7. Configurar el frontend (`frontend/.env`)
 
 En otra terminal:
 
@@ -222,11 +281,11 @@ VITE_SUPABASE_ANON_KEY=tu-anon-key
 VITE_GOOGLE_CLIENT_ID=tu-google-client-id.apps.googleusercontent.com
 ```
 
-**Captura 2.10** — Terminal mostrando el `npm install` completado dentro de `frontend/`:
+**Captura 2.14** — Terminal mostrando el `npm install` completado dentro de `frontend/`:
 
 ![npm install frontend](capturas-instacion/npmI-frontend.png)
 
-**Captura 2.11** — Archivo `frontend/.env` abierto en VS Code con las variables rellenadas:
+**Captura 2.15** — Archivo `frontend/.env` abierto en VS Code con las variables rellenadas:
 
 ![Archivo .env del frontend](capturas-instacion/env-frontend.png)
 
